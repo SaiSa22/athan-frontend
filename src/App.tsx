@@ -11,7 +11,6 @@ function App() {
   const [startTime, setStartTime] = useState<Date>(new Date());
   const [endTime, setEndTime] = useState<Date>(new Date());
   
-  // State for events
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   
   const [audioUrl, setAudioUrl] = useState<string>('');
@@ -19,6 +18,15 @@ function App() {
   const [error, setError] = useState<string>('');
 
   const API_URL = "https://faas-nyc1-2ef2e6cc.doserverless.co/api/v1/web/fn-d690139c-c62c-4535-a31f-b6895767f7aa/speech/convert"; 
+
+  // --- STYLES (Moved here to prevent syntax errors) ---
+  const buttonBaseClass = "w-full py-4 text-lg font-bold text-white rounded-xl shadow-md transition-all active:scale-95";
+  const buttonLoadingClass = "bg-gray-400 cursor-not-allowed";
+  const buttonActiveClass = "bg-blue-600 hover:bg-blue-700 hover:shadow-xl";
+  const finalButtonClass = `${buttonBaseClass} ${loading ? buttonLoadingClass : buttonActiveClass}`;
+
+  const textAreaClass = "w-full h-[200px] xl:h-[300px] p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none resize-none bg-gray-50 text-base";
+  const datePickerClass = "w-full p-2 border border-gray-300 rounded-lg text-center font-mono cursor-pointer hover:bg-gray-50";
 
   const sendToBackend = async (messageText: string, startUnix: number, endUnix: number) => {
     setLoading(true);
@@ -74,7 +82,7 @@ function App() {
     const start = getUnix(date, startTime);
     const end = getUnix(date, endTime);
     
-    // We create a visual event for the manual entry too!
+    // Create visual event
     const manualEvent: CalendarEvent = {
         id: Date.now().toString(),
         date: date.toLocaleDateString('en-CA'),
@@ -91,7 +99,6 @@ function App() {
   const handleModalEvent = async (newEvent: CalendarEvent) => {
     setEvents([...events, newEvent]);
     
-    // Safety check for optional time fields
     const sTime = newEvent.startTime || '09:00';
     const eTime = newEvent.endTime || '10:00';
 
@@ -106,7 +113,6 @@ function App() {
     }
   };
 
-  // Handle Delete
   const handleDeleteEvent = (eventId: string) => {
     const updatedEvents = events.filter(e => e.id !== eventId);
     setEvents(updatedEvents);
@@ -142,7 +148,7 @@ function App() {
               placeholder="Type your alert message here..."
               value={text}
               onChange={(e) => setText(e.target.value)}
-              className="w-full h-[200px] xl:h-[300px] p-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none resize-none bg-gray-50 text-base"
+              className={textAreaClass}
             />
           </div>
 
@@ -159,7 +165,7 @@ function App() {
                     timeIntervals={15}
                     timeCaption="Time"
                     dateFormat="h:mm aa"
-                    className="w-full p-2 border border-gray-300 rounded-lg text-center font-mono cursor-pointer hover:bg-gray-50"
+                    className={datePickerClass}
                   />
                 </div>
                 <div className="flex flex-col">
@@ -172,7 +178,7 @@ function App() {
                     timeIntervals={15}
                     timeCaption="Time"
                     dateFormat="h:mm aa"
-                    className="w-full p-2 border border-gray-300 rounded-lg text-center font-mono cursor-pointer hover:bg-gray-50"
+                    className={datePickerClass}
                   />
                 </div>
               </div>
@@ -181,5 +187,38 @@ function App() {
           <button 
             onClick={handleManualConvert} 
             disabled={loading}
-            className={`w-full py-4 text-lg font-bold text-white rounded-xl shadow-md transition-all active:scale-95 ${
-              loading ? 'bg-gray-400 cursor-
+            className={finalButtonClass}
+          >
+            {loading ? 'Processing...' : 'Create Manual Alert'}
+          </button>
+          
+          {error && <div className="p-3 bg-red-100 text-red-700 rounded-lg text-center border border-red-200 text-sm">{error}</div>}
+        </div>
+
+        <div className="flex-grow h-full flex flex-col min-w-0">
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden h-full flex flex-col">
+              <div className="flex-none px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <label className="font-bold text-lg text-gray-800">2. Select Date</label>
+                <span className="bg-blue-600 text-white py-1 px-4 rounded-full text-sm font-bold shadow-sm">
+                  {date.toDateString()}
+                </span>
+              </div>
+              
+              <div className="flex-grow relative h-full bg-white overflow-hidden">
+                <ContinuousCalendar 
+                    onClick={handleDateSelect} 
+                    events={events}             
+                    onAddEvent={handleModalEvent}
+                    onDeleteEvent={handleDeleteEvent}
+                    selectedDate={date}         
+                />
+              </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+export default App;
