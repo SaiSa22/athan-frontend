@@ -5,24 +5,74 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-interface ContinuousCalendarProps {
-  onClick?: (_day:number, _month: number, _year: number) => void;
+export interface CalendarEvent {
+  date: string; // "YYYY-MM-DD"
+  title: string;
+  message?: string;
+  startTime?: string;
+  endTime?: string;
 }
 
-export const ContinuousCalendar: React.FC<ContinuousCalendarProps> = ({ onClick }) => {
+interface ContinuousCalendarProps {
+  onClick?: (_day: number, _month: number, _year: number) => void;
+  events?: CalendarEvent[];
+  onAddEvent?: (event: CalendarEvent) => void;
+  selectedDate?: Date | null; // NEW: We need to know the selected date to enable the button
+}
+
+export const ContinuousCalendar: React.FC<ContinuousCalendarProps> = ({ onClick, events = [], onAddEvent, selectedDate }) => {
   const today = new Date();
   const dayRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [year, setYear] = useState<number>(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number>(0);
+  
+  // MODAL STATE
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // Form Fields
+  const [title, setTitle] = useState('');
+  const [message, setMessage] = useState('');
+  const [startT, setStartT] = useState('09:00');
+  const [endT, setEndT] = useState('10:00');
+
   const monthOptions = monthNames.map((month, index) => ({ name: month, value: `${index}` }));
 
+  // --- MODAL HANDLERS ---
+  const handleOpenModal = () => {
+    if (selectedDate) {
+      setIsModalOpen(true);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    // Reset form
+    setTitle('');
+    setMessage('');
+    setStartT('09:00');
+    setEndT('10:00');
+  };
+
+  const handleSubmitEvent = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (onAddEvent && selectedDate) {
+      onAddEvent({
+        date: selectedDate.toLocaleDateString('en-CA'), // Keep YYYY-MM-DD format
+        title: title,
+        message: message,
+        startTime: startT,
+        endTime: endT
+      });
+      handleCloseModal();
+    }
+  };
+
+  // ... (Scroll logic remains same) ...
   const scrollToDay = (monthIndex: number, dayIndex: number) => {
     const targetDayIndex = dayRefs.current.findIndex(
       (ref) => ref && ref.getAttribute('data-month') === `${monthIndex}` && ref.getAttribute('data-day') === `${dayIndex}`,
     );
-
     const targetElement = dayRefs.current[targetDayIndex];
-
     if (targetDayIndex !== -1 && targetElement) {
       const container = document.querySelector('.calendar-container');
       const elementRect = targetElement.getBoundingClientRect();
@@ -32,18 +82,10 @@ export const ContinuousCalendar: React.FC<ContinuousCalendarProps> = ({ onClick 
       if (container) {
         const containerRect = container.getBoundingClientRect();
         const offset = elementRect.top - containerRect.top - (containerRect.height / offsetFactor) + (elementRect.height / 2);
-
-        container.scrollTo({
-          top: container.scrollTop + offset,
-          behavior: 'smooth',
-        });
+        container.scrollTo({ top: container.scrollTop + offset, behavior: 'smooth' });
       } else {
         const offset = window.scrollY + elementRect.top - (window.innerHeight / offsetFactor) + (elementRect.height / 2);
-  
-        window.scrollTo({
-          top: offset,
-          behavior: 'smooth',
-        });
+        window.scrollTo({ top: offset, behavior: 'smooth' });
       }
     }
   };
@@ -70,6 +112,11 @@ export const ContinuousCalendar: React.FC<ContinuousCalendarProps> = ({ onClick 
       onClick(day, month, year);
     }
   }
+
+  const getEventsForDay = (d: number, m: number, y: number) => {
+    const dateStr = new Date(y, m, d).toLocaleDateString('en-CA');
+    return events.filter(e => e.date === dateStr);
+  };
 
   const generateCalendar = useMemo(() => {
     const today = new Date();
@@ -116,6 +163,14 @@ export const ContinuousCalendar: React.FC<ContinuousCalendarProps> = ({ onClick 
           const index = weekIndex * 7 + dayIndex;
           const isNewMonth = index === 0 || calendarDays[index - 1].month !== month;
           const isToday = today.getMonth() === month && today.getDate() === day && today.getFullYear() === year;
+          
+          // Check for Selection
+          const isSelected = selectedDate && 
+                             selectedDate.getDate() === day && 
+                             selectedDate.getMonth() === month && 
+                             selectedDate.getFullYear() === year;
+
+          const dayEvents = getEventsForDay(day, month, year);
 
           return (
             <div
@@ -124,21 +179,29 @@ export const ContinuousCalendar: React.FC<ContinuousCalendarProps> = ({ onClick 
               data-month={month}
               data-day={day}
               onClick={() => handleDayClick(day, month, year)}
-              className={`relative z-10 m-[-0.5px] group aspect-square w-full grow cursor-pointer rounded-xl border font-medium transition-all hover:z-20 hover:border-cyan-400 sm:-m-px sm:size-20 sm:rounded-2xl sm:border-2 lg:size-36 lg:rounded-3xl 2xl:size-40`}
+              // UPDATED: Added ring-blue-600 when selected
+              className={`relative z-10 m-[-0.5px] group aspect-square w-full grow cursor-pointer rounded-xl border font-medium transition-all hover:z-20 hover:border-cyan-400 
+                ${isSelected ? 'ring-2 ring-blue-600 bg-blue-50 z-30' : ''}
+                sm:-m-px sm:size-20 sm:rounded-2xl sm:border-2 lg:size-36 lg:rounded-3xl 2xl:size-40`}
             >
               <span className={`absolute left-1 top-1 flex size-5 items-center justify-center rounded-full text-xs sm:size-6 sm:text-sm lg:left-2 lg:top-2 lg:size-8 lg:text-base ${isToday ? 'bg-blue-500 font-semibold text-white' : ''} ${month < 0 ? 'text-slate-400' : 'text-slate-800'}`}>
                 {day}
               </span>
+              
+              {/* Event Bars */}
+              <div className="absolute top-8 left-1 right-1 flex flex-col gap-1 overflow-hidden">
+                {dayEvents.map((evt, idx) => (
+                  <div key={idx} className="bg-blue-100 text-blue-700 text-[10px] sm:text-xs px-1 rounded truncate border border-blue-200 shadow-sm">
+                    {evt.title}
+                  </div>
+                ))}
+              </div>
+
               {isNewMonth && (
                 <span className="absolute bottom-0.5 left-0 w-full truncate px-1.5 text-sm font-semibold text-slate-300 sm:bottom-0 sm:text-lg lg:bottom-2.5 lg:left-3.5 lg:-mb-1 lg:w-fit lg:px-0 lg:text-xl 2xl:mb-[-4px] 2xl:text-2xl">
                   {monthNames[month]}
                 </span>
               )}
-              <button type="button" className="absolute right-2 top-2 rounded-full opacity-0 transition-all focus:opacity-100 group-hover:opacity-100">
-                <svg className="size-8 scale-90 text-blue-500 transition-all hover:scale-100 group-focus:scale-100" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
-                  <path fillRule="evenodd" d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm11-4.243a1 1 0 1 0-2 0V11H7.757a1 1 0 1 0 0 2H11v3.243a1 1 0 1 0 2 0V13h3.243a1 1 0 1 0 0-2H13V7.757Z" clipRule="evenodd"/>
-                </svg>
-              </button>
             </div>
           );
         })}
@@ -146,40 +209,28 @@ export const ContinuousCalendar: React.FC<ContinuousCalendarProps> = ({ onClick 
     ));
 
     return calendar;
-  }, [year]);
+  }, [year, events, selectedDate]); // Added selectedDate dependency
 
+  // ... (Effect logic remains same) ...
   useEffect(() => {
     const calendarContainer = document.querySelector('.calendar-container');
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const month = parseInt(entry.target.getAttribute('data-month')!, 10);
-            setSelectedMonth(month);
-          }
-        });
-      },
-      {
-        root: calendarContainer,
-        rootMargin: '-75% 0px -25% 0px',
-        threshold: 0,
-      },
-    );
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const month = parseInt(entry.target.getAttribute('data-month')!, 10);
+          setSelectedMonth(month);
+        }
+      });
+    }, { root: calendarContainer, rootMargin: '-75% 0px -25% 0px', threshold: 0 });
 
     dayRefs.current.forEach((ref) => {
-      if (ref && ref.getAttribute('data-day') === '15') {
-        observer.observe(ref);
-      }
+      if (ref && ref.getAttribute('data-day') === '15') observer.observe(ref);
     });
-
-    return () => {
-      observer.disconnect();
-    };
+    return () => observer.disconnect();
   }, []);
 
   return (
-    <div className="no-scrollbar calendar-container max-h-full overflow-y-scroll rounded-t-2xl bg-white pb-10 text-slate-800 shadow-xl">
+    <div className="relative no-scrollbar calendar-container max-h-full overflow-y-scroll rounded-t-2xl bg-white pb-10 text-slate-800 shadow-xl">
       <div className="sticky -top-px z-50 w-full rounded-t-2xl bg-white px-5 pt-7 sm:px-8 sm:pt-8">
         <div className="mb-4 flex w-full flex-wrap items-center justify-between gap-6">
           <div className="flex flex-wrap gap-2 sm:gap-3">
@@ -187,24 +238,29 @@ export const ContinuousCalendar: React.FC<ContinuousCalendarProps> = ({ onClick 
             <button onClick={handleTodayClick} type="button" className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-900 hover:bg-gray-100 lg:px-5 lg:py-2.5">
               Today
             </button>
-            <button type="button" className="whitespace-nowrap rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 px-3 py-1.5 text-center text-sm font-medium text-white hover:bg-gradient-to-bl focus:outline-none focus:ring-4 focus:ring-cyan-300 sm:rounded-xl lg:px-5 lg:py-2.5">
+            
+            {/* UPDATED ADD EVENT BUTTON */}
+            <button 
+              type="button" 
+              onClick={handleOpenModal}
+              disabled={!selectedDate}
+              className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-center text-sm font-medium text-white sm:rounded-xl lg:px-5 lg:py-2.5 transition-all
+                ${selectedDate 
+                  ? 'bg-gradient-to-r from-cyan-500 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:ring-cyan-300 shadow-md' 
+                  : 'bg-gray-300 cursor-not-allowed opacity-50'}`}
+            >
               + Add Event
             </button>
+
           </div>
           <div className="flex w-fit items-center justify-between">
-            <button
-              onClick={handlePrevYear}
-              className="rounded-full border border-slate-300 p-1 transition-colors hover:bg-slate-100 sm:p-2"
-            >
+            <button onClick={handlePrevYear} className="rounded-full border border-slate-300 p-1 transition-colors hover:bg-slate-100 sm:p-2">
               <svg className="size-5 text-slate-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                 <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m15 19-7-7 7-7"/>
               </svg>
             </button>
             <h1 className="min-w-16 text-center text-lg font-semibold sm:min-w-20 sm:text-xl">{year}</h1>
-            <button
-              onClick={handleNextYear}
-              className="rounded-full border border-slate-300 p-1 transition-colors hover:bg-slate-100 sm:p-2"
-            >
+            <button onClick={handleNextYear} className="rounded-full border border-slate-300 p-1 transition-colors hover:bg-slate-100 sm:p-2">
               <svg className="size-5 text-slate-800" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                 <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m9 5 7 7-7 7"/>
               </svg>
@@ -222,6 +278,94 @@ export const ContinuousCalendar: React.FC<ContinuousCalendarProps> = ({ onClick 
       <div className="w-full px-5 pt-4 sm:px-8 sm:pt-6">
         {generateCalendar}
       </div>
+
+      {/* --- POPUP MODAL --- */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-lg mx-4 animate-in fade-in zoom-in duration-200">
+            
+            {/* Modal Header showing selected Day/Date */}
+            <div className="border-b border-gray-100 pb-4 mb-4">
+               <h2 className="text-2xl font-bold text-gray-800">
+                 {selectedDate?.toLocaleDateString('en-US', { weekday: 'long' })}
+               </h2>
+               <p className="text-gray-500 font-medium">
+                 {selectedDate?.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+               </p>
+            </div>
+
+            <form onSubmit={handleSubmitEvent}>
+              {/* Alert Title */}
+              <div className="mb-4">
+                <label className="block text-sm font-bold text-gray-700 mb-1">Alert Title</label>
+                <input 
+                  type="text" 
+                  value={title} 
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50"
+                  placeholder="e.g. Morning Wake Up"
+                  autoFocus
+                  required
+                />
+              </div>
+
+              {/* Start & End Time (Side by Side) */}
+              <div className="flex gap-4 mb-4">
+                 <div className="flex-1">
+                    <label className="block text-sm font-bold text-gray-700 mb-1">Start Time</label>
+                    <input 
+                      type="time" 
+                      value={startT} 
+                      onChange={(e) => setStartT(e.target.value)}
+                      className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50"
+                      required
+                    />
+                 </div>
+                 <div className="flex-1">
+                    <label className="block text-sm font-bold text-gray-700 mb-1">End Time</label>
+                    <input 
+                      type="time" 
+                      value={endT} 
+                      onChange={(e) => setEndT(e.target.value)}
+                      className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50"
+                      required
+                    />
+                 </div>
+              </div>
+
+              {/* Alert Message */}
+              <div className="mb-6">
+                <label className="block text-sm font-bold text-gray-700 mb-1">Alert Message</label>
+                <textarea 
+                  value={message} 
+                  onChange={(e) => setMessage(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none resize-none bg-gray-50 h-24"
+                  placeholder="The text that will be converted to speech..."
+                  required
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
+                <button 
+                  type="button" 
+                  onClick={handleCloseModal}
+                  className="px-5 py-2.5 text-gray-700 font-medium hover:bg-gray-100 rounded-xl transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="px-6 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-lg"
+                >
+                  Create Alert
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
