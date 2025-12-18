@@ -1,24 +1,25 @@
 import React, { useState } from 'react';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import './App.css';
+import { ContinuousCalendar } from './ContinuousCalendar';
+import './App.css'; 
 
 function App() {
-  const [text, setText] = useState('');
+  const [text, setText] = useState<string>('');
   
-  // Initialize with current date/time objects for react-datepicker
-  const [date, setDate] = useState(new Date());
-  const [startTime, setStartTime] = useState(new Date());
-  const [endTime, setEndTime] = useState(new Date());
+  // State variables
+  const [date, setDate] = useState<Date>(new Date());
+  const [startTime, setStartTime] = useState<Date>(new Date());
+  const [endTime, setEndTime] = useState<Date>(new Date());
 
-  const [audioUrl, setAudioUrl] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [audioUrl, setAudioUrl] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>('');
 
   const API_URL = "https://faas-nyc1-2ef2e6cc.doserverless.co/api/v1/web/fn-d690139c-c62c-4535-a31f-b6895767f7aa/speech/convert"; 
 
-  // Updated Helper: Combine Date object and Time object
-  const getUnixTimestamp = (selectedDate, selectedTime) => {
+  // Helper: Combine Date + Time
+  const getUnixTimestamp = (selectedDate: Date, selectedTime: Date) => {
     if (!selectedDate || !selectedTime) return 0;
     
     const combined = new Date(selectedDate);
@@ -27,6 +28,13 @@ function App() {
     combined.setSeconds(0);
 
     return Math.floor(combined.getTime() / 1000);
+  };
+
+  // Handler for the new Calendar Component
+  const handleDateSelect = (day: number, month: number, year: number) => {
+    // Create new date object from the calendar click (Month is 0-indexed)
+    const newDate = new Date(year, month, day);
+    setDate(newDate);
   };
 
   const handleConvert = async () => {
@@ -66,7 +74,7 @@ function App() {
       } else {
         setError("Unknown error from server.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
       setError(err.message || "Failed to connect to the server.");
     } finally {
@@ -74,117 +82,105 @@ function App() {
     }
   };
 
-  // Styles for the side-by-side layout
-  const layoutStyle = {
-    display: 'flex',
-    gap: '20px',
-    alignItems: 'flex-start',
-    marginBottom: '20px',
-    flexWrap: 'wrap' // Allows wrapping on very small mobile screens
-  };
-
-  const leftColumnStyle = {
-    flex: 2, // Takes up twice as much space as the right column
-    minWidth: '300px'
-  };
-
-  const rightColumnStyle = {
-    flex: 1, // Takes up remaining space
-    minWidth: '200px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '15px',
-    textAlign: 'left'
-  };
-
-  const labelStyle = {
-    fontWeight: 'bold',
-    marginBottom: '5px',
-    display: 'block',
-    fontSize: '14px'
-  };
-
   return (
-    <div className="App">
-      <div className="container" style={{ maxWidth: '900px' }}> {/* Increased max-width for side-by-side */}
-        <h1>MagRemind App</h1>
-        {/* SIDE BY SIDE CONTAINER */}
-        <div style={layoutStyle}>
+    <div className="App min-h-screen bg-gray-50 p-8">
+      <div className="container mx-auto max-w-6xl">
+        <h1 className="text-3xl font-bold mb-2">Text to Speech</h1>
+        <p className="text-gray-600 mb-8">Powered by Azure & DigitalOcean</p>
+
+        {/* MAIN LAYOUT: Flexbox for Side-by-Side */}
+        <div className="flex flex-col lg:flex-row gap-8 items-start justify-center">
           
-          {/* LEFT: TEXT AREA */}
-          <div style={leftColumnStyle}>
+          {/* LEFT COLUMN: Text Input */}
+          <div className="w-full lg:w-1/2 flex flex-col">
+            <label className="font-bold mb-2 text-left">Message:</label>
             <textarea 
               placeholder="Type text here to convert to audio..."
               value={text}
               onChange={(e) => setText(e.target.value)}
-              style={{ width: '100%', height: '200px', resize: 'vertical' }}
+              className="w-full p-4 border border-gray-300 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none"
+              style={{ height: '500px' }} 
             />
           </div>
 
-          {/* RIGHT: DATE & TIME PICKERS */}
-          <div style={rightColumnStyle}>
+          {/* RIGHT COLUMN: Calendar & Time */}
+          <div className="w-full lg:w-1/2 flex flex-col gap-6">
             
-            {/* Date */}
-            <div>
-              <label style={labelStyle}>Date:</label>
-              <DatePicker 
-                selected={date} 
-                onChange={(d) => setDate(d)}
-                dateFormat="MMMM d, yyyy"
-                className="custom-input"
-              />
+            {/* 1. The Continuous Calendar */}
+            <div className="w-full">
+               <label className="font-bold mb-2 block text-left">
+                 Selected Date: {date.toDateString()}
+               </label>
+               {/* We give the calendar a fixed height wrapper so it scrolls internally */}
+               <div className="h-[400px] border border-gray-200 rounded-2xl shadow-sm overflow-hidden relative">
+                  <ContinuousCalendar onClick={handleDateSelect} />
+               </div>
             </div>
 
-            {/* Start Time */}
-            <div>
-              <label style={labelStyle}>Start Time:</label>
-              <DatePicker
-                selected={startTime}
-                onChange={(d) => setStartTime(d)}
-                showTimeSelect
-                showTimeSelectOnly
-                timeIntervals={15}
-                timeCaption="Time"
-                dateFormat="h:mm aa"
-                className="custom-input"
-              />
+            {/* 2. Time Pickers (Using React-DatePicker for specific time selection) */}
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <label className="font-bold mb-1 block text-sm">Start Time:</label>
+                <DatePicker
+                  selected={startTime}
+                  onChange={(d: Date) => setStartTime(d)}
+                  showTimeSelect
+                  showTimeSelectOnly
+                  timeIntervals={15}
+                  timeCaption="Time"
+                  dateFormat="h:mm aa"
+                  className="w-full p-2 border border-gray-300 rounded-lg text-center cursor-pointer"
+                />
+              </div>
+
+              <div className="flex-1">
+                <label className="font-bold mb-1 block text-sm">End Time:</label>
+                <DatePicker
+                  selected={endTime}
+                  onChange={(d: Date) => setEndTime(d)}
+                  showTimeSelect
+                  showTimeSelectOnly
+                  timeIntervals={15}
+                  timeCaption="Time"
+                  dateFormat="h:mm aa"
+                  className="w-full p-2 border border-gray-300 rounded-lg text-center cursor-pointer"
+                />
+              </div>
             </div>
 
-            {/* End Time */}
-            <div>
-              <label style={labelStyle}>End Time:</label>
-              <DatePicker
-                selected={endTime}
-                onChange={(d) => setEndTime(d)}
-                showTimeSelect
-                showTimeSelectOnly
-                timeIntervals={15}
-                timeCaption="Time"
-                dateFormat="h:mm aa"
-                className="custom-input"
-              />
-            </div>
-
+            {/* 3. Action Button */}
+            <button 
+              onClick={handleConvert} 
+              disabled={loading}
+              className={`w-full py-4 text-lg font-bold text-white rounded-xl shadow-md transition-all ${
+                loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 hover:shadow-lg'
+              }`}
+            >
+              {loading ? 'Processing...' : 'Create Alert'}
+            </button>
           </div>
         </div>
 
-        {/* BUTTONS & RESULTS */}
-        <div className="button-container">
-          <button onClick={handleConvert} disabled={loading}>
-            {loading ? 'Processing...' : 'Generate JSON & Audio'}
-          </button>
-        </div>
+        {/* ERROR MESSAGE */}
+        {error && (
+          <div className="mt-6 p-4 bg-red-100 text-red-700 rounded-lg border border-red-200">
+            Error: {error}
+          </div>
+        )}
 
-        {error && <div className="error-message">Error: {error}</div>}
-
+        {/* AUDIO PLAYER RESULT */}
         {audioUrl && (
-          <div className="result-container">
-            <h3>Audio Ready:</h3>
-            <audio controls autoPlay src={audioUrl}>
+          <div className="mt-8 p-6 bg-white rounded-xl shadow-lg border border-gray-100 text-center">
+            <h3 className="text-xl font-bold mb-4">Audio Ready:</h3>
+            <audio controls autoPlay src={audioUrl} className="w-full mb-4">
               Your browser does not support audio.
             </audio>
-            <br />
-            <a href={audioUrl} target="_blank" rel="noreferrer" className="download-link">
+            <a 
+              href={audioUrl} 
+              target="_blank" 
+              rel="noreferrer" 
+              className="inline-block px-6 py-2 bg-gray-800 text-white rounded-lg hover:bg-black transition-colors"
+            >
               Download MP3 File
             </a>
           </div>
