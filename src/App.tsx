@@ -123,7 +123,8 @@ function App() {
                 <label className="font-bold mb-1 block text-sm">Start Time:</label>
                 <DatePicker
                   selected={startTime}
-                  onChange={(d: Date) => setStartTime(d)}
+                  // FIX IS HERE: We accept 'd' which might be null, check if it exists, then set state
+                  onChange={(d: Date | null) => d && setStartTime(d)}
                   showTimeSelect
                   showTimeSelectOnly
                   timeIntervals={15}
@@ -137,7 +138,8 @@ function App() {
                 <label className="font-bold mb-1 block text-sm">End Time:</label>
                 <DatePicker
                   selected={endTime}
-                  onChange={(d: Date) => setEndTime(d)}
+                  // FIX IS HERE: Same fix for End Time
+                  onChange={(d: Date | null) => d && setEndTime(d)}
                   showTimeSelect
                   showTimeSelectOnly
                   timeIntervals={15}
@@ -189,4 +191,5 @@ function App() {
     </div>
   );
 }
+
 export default App;
