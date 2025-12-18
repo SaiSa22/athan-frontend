@@ -83,16 +83,20 @@ function App() {
     }
   };
 
+  // NEW: Handle Delete
+  const handleDeleteEvent = (eventId: string) => {
+    const updatedEvents = events.filter(e => e.id !== eventId);
+    setEvents(updatedEvents);
+    // Optional: Add logic here to call an API to delete the alert from the server if needed
+  };
+
   const handleDateSelect = (day: number, month: number, year: number) => {
     const newDate = new Date(year, month, day);
     setDate(newDate);
   };
 
   return (
-    // ROOT CONTAINER: Locked to screen height (h-screen), no global scroll (overflow-hidden)
     <div className="h-screen w-full bg-gray-50 flex flex-col overflow-hidden font-sans">
-      
-      {/* HEADER: Fixed height (flex-none) */}
       <div className="flex-none w-full flex justify-between items-center px-6 py-4 bg-white border-b border-gray-200 z-10">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Text to Speech Alert System</h1>
@@ -107,13 +111,9 @@ function App() {
         )}
       </div>
 
-      {/* MAIN CONTENT GRID: Grows to fill remaining space (flex-grow) */}
       <div className="flex-grow flex flex-col xl:flex-row gap-6 p-6 overflow-hidden">
         
-        {/* LEFT COLUMN: Controls */}
-        {/* 'overflow-y-auto' allows this specific column to scroll if content gets too tall */}
         <div className="w-full xl:w-[400px] flex-shrink-0 flex flex-col gap-4 overflow-y-auto pr-2 custom-scrollbar">
-          
           <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
             <label className="font-bold mb-3 block text-gray-700">1. Manual Message</label>
             <textarea 
@@ -169,12 +169,8 @@ function App() {
           {error && <div className="p-3 bg-red-100 text-red-700 rounded-lg text-center border border-red-200 text-sm">{error}</div>}
         </div>
 
-        {/* RIGHT COLUMN: Calendar Container */}
-        {/* flex-grow ensures it takes all remaining width. h-full ensures it takes full height. */}
         <div className="flex-grow h-full flex flex-col min-w-0">
           <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden h-full flex flex-col">
-              
-              {/* Card Header (Fixed Height) */}
               <div className="flex-none px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
                 <label className="font-bold text-lg text-gray-800">2. Select Date</label>
                 <span className="bg-blue-600 text-white py-1 px-4 rounded-full text-sm font-bold shadow-sm">
@@ -182,13 +178,12 @@ function App() {
                 </span>
               </div>
               
-              {/* Calendar Body (Fills remaining height) */}
-              {/* 'relative' allows the inner calendar absolute positioning to work if needed. 'h-full' passes the height down. */}
               <div className="flex-grow relative h-full bg-white overflow-hidden">
                 <ContinuousCalendar 
                     onClick={handleDateSelect} 
                     events={events}             
-                    onAddEvent={handleModalEvent} 
+                    onAddEvent={handleModalEvent}
+                    onDeleteEvent={handleDeleteEvent} // NEW: Pass Delete Handler
                     selectedDate={date}         
                 />
               </div>
