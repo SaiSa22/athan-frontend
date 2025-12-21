@@ -126,7 +126,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     <div className="h-screen w-full bg-gray-50 flex flex-col overflow-hidden font-sans">
       <div className="flex-none w-full flex justify-between items-center px-6 py-4 bg-white border-b border-gray-200 z-10">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Text to Speech Alert System</h1>
+          <h1 className="text-2xl font-bold text-gray-800">Text to Speech Alert System made with Zayn</h1>
           <p className="text-gray-500 text-sm">Powered by Azure & DigitalOcean</p>
         </div>
         
