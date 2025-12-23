@@ -1,28 +1,37 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dashboard } from './Dashboard';
 import { Auth } from './Auth';
+import { supabase } from './supabaseClient';
 import './App.css'; 
 
 function App() {
-  // Simple state to track if user is logged in
-  // In a real app, you might check LocalStorage here to persist login across refreshes
-  const [user, setUser] = useState<string | null>(null);
+  const [session, setSession] = useState<any>(null);
 
-  const handleLogin = (email: string) => {
-    setUser(email);
+  useEffect(() => {
+    // 1. Check active session on load
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    // 2. Listen for changes (login, logout, auto-refresh)
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
   };
 
-  const handleLogout = () => {
-    setUser(null);
-  };
-
-  // CONDITIONAL RENDERING:
-  // If we have a user, show Dashboard. Otherwise, show Auth.
-  if (user) {
-    return <Dashboard onLogout={handleLogout} />;
+  if (session) {
+    return <Dashboard session={session} onLogout={handleLogout} />;
   }
 
-  return <Auth onLoginSuccess={handleLogin} />;
+  return <Auth onLoginSuccess={(s) => setSession(s)} />;
 }
 
 export default App;
