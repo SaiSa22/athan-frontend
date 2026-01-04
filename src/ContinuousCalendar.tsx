@@ -173,15 +173,18 @@ export const ContinuousCalendar: React.FC<ContinuousCalendarProps> = ({ onClick,
               data-month={month}
               data-day={day}
               onClick={() => handleDayClick(day, month, year)}
-              className={`relative z-10 m-[-0.5px] group aspect-square w-full grow cursor-pointer rounded-xl border font-medium transition-all hover:z-20 hover:border-cyan-400 
+              // FIX: Removed fixed 'size-xx' classes. Added 'flex-1'.
+              className={`
+                relative z-10 -ml-px -mt-px group aspect-square flex-1 cursor-pointer rounded-xl border font-medium transition-all hover:z-20 hover:border-cyan-400 
                 ${isSelected ? 'ring-2 ring-blue-600 bg-blue-50 z-30' : ''}
-                sm:-m-px sm:size-20 sm:rounded-2xl sm:border-2 lg:size-36 lg:rounded-3xl 2xl:size-40`}
+                sm:rounded-2xl sm:border-2 lg:rounded-3xl
+              `}
             >
               <span className={`absolute left-1 top-1 flex size-5 items-center justify-center rounded-full text-xs sm:size-6 sm:text-sm lg:left-2 lg:top-2 lg:size-8 lg:text-base ${isToday ? 'bg-blue-500 font-semibold text-white' : ''} ${month < 0 ? 'text-slate-400' : 'text-slate-800'}`}>
                 {day}
               </span>
               
-              <div className="absolute top-10 sm:top-12 left-1 right-1 flex flex-col gap-1 overflow-hidden z-40">
+              <div className="absolute top-8 sm:top-10 left-1 right-1 flex flex-col gap-0.5 sm:gap-1 overflow-hidden z-40 max-h-[60%]">
                 {dayEvents.map((evt) => {
                    const isEvtSelected = evt.id === selectedEventId;
                    return (
@@ -189,7 +192,7 @@ export const ContinuousCalendar: React.FC<ContinuousCalendarProps> = ({ onClick,
                       key={evt.id} 
                       onClick={(e) => handleEventClick(e, evt.id)}
                       className={`
-                        text-[10px] sm:text-xs px-1 rounded truncate border shadow-sm transition-all
+                        text-[9px] sm:text-[10px] md:text-xs px-1 py-0.5 rounded truncate border shadow-sm transition-all
                         ${isEvtSelected 
                            ? 'bg-blue-600 text-white border-blue-700 ring-2 ring-blue-300' 
                            : 'bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200'}
@@ -202,7 +205,7 @@ export const ContinuousCalendar: React.FC<ContinuousCalendarProps> = ({ onClick,
               </div>
 
               {isNewMonth && (
-                <span className="absolute bottom-0.5 left-0 w-full truncate px-1.5 text-sm font-semibold text-slate-300 sm:bottom-0 sm:text-lg lg:bottom-2.5 lg:left-3.5 lg:-mb-1 lg:w-fit lg:px-0 lg:text-xl 2xl:mb-[-4px] 2xl:text-2xl">
+                <span className="absolute bottom-0.5 left-0 w-full truncate px-1.5 text-xs font-semibold text-slate-300 sm:bottom-0 sm:text-sm lg:bottom-1.5 lg:left-2 lg:text-lg">
                   {monthNames[month]}
                 </span>
               )}
@@ -342,7 +345,6 @@ export const ContinuousCalendar: React.FC<ContinuousCalendarProps> = ({ onClick,
   );
 };
 
-// FIX IS HERE: Added the missing Interface definition
 export interface SelectProps {
   name: string;
   value: string;
