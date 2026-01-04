@@ -5,7 +5,9 @@ import { ContinuousCalendar, CalendarEvent } from './ContinuousCalendar';
 import { supabase } from './supabaseClient';
 import { SettingsModal } from './SettingsModal';
 
-// --- YOUR DIGITALOCEAN FUNCTION URL (WEB ENDPOINT) ---
+// --------------------------------------------------------------------------
+// REPLACE WITH YOUR ACTUAL DIGITALOCEAN FUNCTION URL
+// --------------------------------------------------------------------------
 const SCHEDULER_URL = "https://faas-nyc1-2ef2e6cc.doserverless.co/api/v1/web/fn-d690139c-c62c-4535-a31f-b6895767f7aa/speech/scheduler-generator";
 
 // --- ICONS ---
@@ -207,3 +209,131 @@ export const Dashboard: React.FC<DashboardProps> = ({ session, onLogout }) => {
       {/* HEADER */}
       <div className="sticky top-0 z-50 flex-none w-full flex justify-between items-center px-4 md:px-6 py-3 bg-white border-b border-gray-200 shadow-sm">
         <div>
+          <h1 className="text-xl md:text-2xl font-bold text-gray-800">MagRemind</h1>
+          <p className="text-gray-500 text-xs md:text-sm">Audio Scheduler</p>
+        </div>
+        
+        <div className="flex items-center gap-2 md:gap-3">
+            {/* REFRESH BUTTON */}
+            <button 
+                onClick={handleForceRefresh}
+                disabled={refreshing}
+                className={`p-2 rounded-full border border-gray-200 hover:bg-blue-50 hover:text-blue-600 transition-colors ${refreshing ? 'text-blue-600 bg-blue-50' : 'text-gray-500'}`}
+                title="Force System Refresh"
+            >
+                <RefreshIcon spinning={refreshing} />
+            </button>
+
+            {/* SETTINGS BUTTON */}
+            <button 
+                onClick={() => setIsSettingsOpen(true)}
+                className="p-2 rounded-full border border-gray-200 hover:bg-gray-100 text-gray-500 transition-colors"
+                title="Settings"
+            >
+                <GearIcon />
+            </button>
+
+            <div className="h-6 w-px bg-gray-300 mx-1"></div>
+
+            <button 
+                onClick={onLogout}
+                className="text-sm text-gray-600 hover:text-red-600 font-medium transition-colors px-2"
+            >
+                Log Out
+            </button>
+        </div>
+      </div>
+
+      {/* MAIN CONTENT AREA */}
+      <div className="flex-grow flex flex-col lg:flex-row gap-6 p-4 md:p-6 overflow-hidden">
+        
+        {/* SIDEBAR: Manual Inputs */}
+        <div className="w-full lg:w-[320px] xl:w-[360px] flex-shrink-0 flex flex-col gap-4">
+          
+          <div className="bg-white p-4 md:p-5 rounded-2xl shadow-sm border border-gray-200">
+            <label className="font-bold mb-3 block text-gray-700 text-sm uppercase tracking-wide">1. Message</label>
+            <textarea 
+              placeholder="Type your alert message here..."
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              className={textAreaClass}
+            />
+          </div>
+
+          <div className="bg-white p-4 md:p-5 rounded-2xl shadow-sm border border-gray-200">
+              <label className="font-bold mb-4 block text-gray-700 text-sm uppercase tracking-wide">2. Time</label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col">
+                  <span className="text-xs font-bold text-gray-400 mb-1">START</span>
+                  <DatePicker
+                    selected={startTime}
+                    onChange={(d: Date | null) => d && setStartTime(d)}
+                    showTimeSelect
+                    showTimeSelectOnly
+                    timeIntervals={15}
+                    timeCaption="Time"
+                    dateFormat="h:mm aa"
+                    className={datePickerClass}
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xs font-bold text-gray-400 mb-1">END</span>
+                  <DatePicker
+                    selected={endTime}
+                    onChange={(d: Date | null) => d && setEndTime(d)}
+                    showTimeSelect
+                    showTimeSelectOnly
+                    timeIntervals={15}
+                    timeCaption="Time"
+                    dateFormat="h:mm aa"
+                    className={datePickerClass}
+                  />
+                </div>
+              </div>
+          </div>
+
+          <button 
+            onClick={handleManualConvert} 
+            disabled={loading}
+            className={finalButtonClass}
+          >
+            {loading ? 'Processing...' : 'Schedule Alert'}
+          </button>
+          
+          {error && <div className="p-3 bg-red-50 text-red-600 rounded-lg text-center border border-red-100 text-xs font-medium">{error}</div>}
+          {msg && <div className="p-3 bg-green-50 text-green-700 rounded-lg text-center border border-green-100 text-xs font-medium">{msg}</div>}
+        </div>
+
+        {/* CALENDAR AREA */}
+        <div className="flex-grow flex flex-col min-w-0 h-[600px] lg:h-auto">
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden h-full flex flex-col">
+              <div className="flex-none px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <label className="font-bold text-lg text-gray-800">Calendar</label>
+                <span className="bg-blue-100 text-blue-800 py-1 px-3 rounded-md text-xs font-bold uppercase tracking-wider">
+                  {date.toDateString()}
+                </span>
+              </div>
+              
+              <div className="flex-grow relative h-full bg-white">
+                <ContinuousCalendar 
+                    onClick={handleDateSelect} 
+                    events={events}             
+                    onAddEvent={handleModalEvent}
+                    onDeleteEvent={handleDeleteEvent}
+                    selectedDate={date}         
+                />
+              </div>
+          </div>
+        </div>
+
+      </div>
+
+      <SettingsModal 
+        isOpen={isSettingsOpen} 
+        onClose={() => setIsSettingsOpen(false)} 
+        session={session} 
+      />
+
+    </div>
+  );
+};
