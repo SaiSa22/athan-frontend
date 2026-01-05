@@ -30,6 +30,7 @@ export const ContinuousCalendar: React.FC<ContinuousCalendarProps> = ({ onClick,
   const [selectedMonth, setSelectedMonth] = useState<number>(0);
   const [pendingScroll, setPendingScroll] = useState<{ m: number, d: number } | null>(null);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [editingEventId, setEditingEventId] = useState<string | null>(null); // Track if editing
 
   // MODAL STATE
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -91,9 +92,35 @@ export const ContinuousCalendar: React.FC<ContinuousCalendarProps> = ({ onClick,
     }
   };
 
-  const handleOpenModal = () => { if (selectedDate) setIsModalOpen(true); };
+  const handleEditClick = () => {
+    const evt = events.find(e => e.id === selectedEventId);
+    if (evt && selectedDate) {
+        // Pre-fill modal with event data
+        setTitle(evt.title);
+        setMessage(evt.message || '');
+        setStartT(evt.startTime || '09:00');
+        setEndT(evt.endTime || '10:00');
+        
+        setEditingEventId(evt.id); // Set mode to Edit
+        setIsModalOpen(true);
+    }
+  };
+
+  const handleOpenModal = () => { 
+    if (selectedDate) {
+        // Reset fields for new event
+        setTitle(''); 
+        setMessage(''); 
+        setStartT('09:00'); 
+        setEndT('10:00');
+        setEditingEventId(null); // Set mode to Create
+        setIsModalOpen(true); 
+    }
+  };
+
   const handleCloseModal = () => {
     setIsModalOpen(false);
+    setEditingEventId(null);
     setTitle(''); setMessage(''); setStartT('09:00'); setEndT('10:00');
   };
 
@@ -101,9 +128,12 @@ export const ContinuousCalendar: React.FC<ContinuousCalendarProps> = ({ onClick,
     e.preventDefault();
     if (onAddEvent && selectedDate) {
       onAddEvent({
-        id: Date.now().toString(), 
+        id: editingEventId || Date.now().toString(), // Use existing ID if editing
         date: selectedDate.toLocaleDateString('en-CA'),
-        title, message, startTime: startT, endTime: endT
+        title, 
+        message, 
+        startTime: startT, 
+        endTime: endT
       });
       handleCloseModal();
     }
@@ -173,7 +203,6 @@ export const ContinuousCalendar: React.FC<ContinuousCalendarProps> = ({ onClick,
               data-month={month}
               data-day={day}
               onClick={() => handleDayClick(day, month, year)}
-              // FIX: Removed fixed 'size-xx' classes. Added 'flex-1'.
               className={`
                 relative z-10 -ml-px -mt-px group aspect-square flex-1 cursor-pointer rounded-xl border font-medium transition-all hover:z-20 hover:border-cyan-400 
                 ${isSelected ? 'ring-2 ring-blue-600 bg-blue-50 z-30' : ''}
@@ -258,16 +287,31 @@ export const ContinuousCalendar: React.FC<ContinuousCalendarProps> = ({ onClick,
             </button>
 
             {selectedEventId && (
-               <button
-                 type="button"
-                 onClick={handleDeleteClick}
-                 className="flex items-center justify-center p-2 text-white bg-red-500 hover:bg-red-600 rounded-lg sm:rounded-xl transition-all shadow-md animate-in fade-in zoom-in duration-200"
-                 title="Delete Selected Event"
-               >
-                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                   <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                 </svg>
-               </button>
+               <div className="flex items-center gap-2 animate-in fade-in zoom-in duration-200">
+                  {/* EDIT BUTTON */}
+                  <button
+                    type="button"
+                    onClick={handleEditClick}
+                    className="flex items-center justify-center p-2 text-white bg-blue-500 hover:bg-blue-600 rounded-lg sm:rounded-xl transition-all shadow-md"
+                    title="Edit Selected Event"
+                  >
+                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                     </svg>
+                  </button>
+                  
+                  {/* DELETE BUTTON */}
+                  <button
+                    type="button"
+                    onClick={handleDeleteClick}
+                    className="flex items-center justify-center p-2 text-white bg-red-500 hover:bg-red-600 rounded-lg sm:rounded-xl transition-all shadow-md"
+                    title="Delete Selected Event"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+               </div>
             )}
 
           </div>
@@ -302,10 +346,10 @@ export const ContinuousCalendar: React.FC<ContinuousCalendarProps> = ({ onClick,
           <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-lg mx-4 animate-in fade-in zoom-in duration-200">
             <div className="border-b border-gray-100 pb-4 mb-4">
                <h2 className="text-2xl font-bold text-gray-800">
-                 {selectedDate?.toLocaleDateString('en-US', { weekday: 'long' })}
+                 {editingEventId ? 'Edit Event' : 'Create Event'}
                </h2>
                <p className="text-gray-500 font-medium">
-                 {selectedDate?.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                 {selectedDate?.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
                </p>
             </div>
             <form onSubmit={handleSubmitEvent}>
@@ -328,14 +372,25 @@ export const ContinuousCalendar: React.FC<ContinuousCalendarProps> = ({ onClick,
                  </div>
               </div>
               <div className="mb-6">
-                <label className="block text-sm font-bold text-gray-700 mb-1">Alert Message</label>
-                <textarea value={message} onChange={(e) => setMessage(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none resize-none bg-gray-50 h-24"
-                  placeholder="The text that will be converted to speech..." required />
+                <div className="flex justify-between items-center mb-1">
+                    <label className="block text-sm font-bold text-gray-700">Alert Message</label>
+                    <span className={`text-xs font-medium ${message.length > 180 ? 'text-red-600' : 'text-gray-400'}`}>
+                        {message.length}/180
+                    </span>
+                </div>
+                <textarea 
+                    value={message} 
+                    maxLength={180}
+                    onChange={(e) => setMessage(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none resize-none bg-gray-50 h-24"
+                    placeholder="The text that will be converted to speech..." required 
+                />
               </div>
               <div className="flex justify-end gap-3 pt-2 border-t border-gray-100">
                 <button type="button" onClick={handleCloseModal} className="px-5 py-2.5 text-gray-700 font-medium hover:bg-gray-100 rounded-xl transition-colors">Cancel</button>
-                <button type="submit" className="px-6 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-lg">Create Alert</button>
+                <button type="submit" className="px-6 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-lg">
+                    {editingEventId ? 'Save Changes' : 'Create Alert'}
+                </button>
               </div>
             </form>
           </div>
