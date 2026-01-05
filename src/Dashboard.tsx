@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import toast, { Toaster } from 'react-hot-toast'; 
 import { ContinuousCalendar, CalendarEvent } from './ContinuousCalendar';
 import { supabase } from './supabaseClient';
 import { SettingsModal } from './SettingsModal';
@@ -13,7 +14,7 @@ const SCHEDULER_URL = "https://faas-nyc1-2ef2e6cc.doserverless.co/api/v1/web/fn-
 // --- ICONS ---
 const GearIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+    <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V4a2 2 0 0 0-2-2z"></path>
     <circle cx="12" cy="12" r="3"></circle>
   </svg>
 );
@@ -51,8 +52,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ session, onLogout }) => {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [refreshing, setRefreshing] = useState<boolean>(false);
-  const [error, setError] = useState<string>('');
-  const [msg, setMsg] = useState<string>('');
   
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
@@ -74,7 +73,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ session, onLogout }) => {
       
       if (data) {
         const loadedEvents: CalendarEvent[] = data.map((item: any) => ({
-          id: item.id,
+          id: String(item.id), // FIX: Force ID to string
           date: item.date,
           title: item.title,
           message: item.message,
@@ -84,6 +83,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ session, onLogout }) => {
         setEvents(loadedEvents);
       } else if (error) {
         console.error('Error loading events:', error);
+        toast.error("Failed to load events");
       }
     };
 
@@ -93,21 +93,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ session, onLogout }) => {
   // --- HELPER: CHECK EVENT LIMIT ---
   const checkLimit = async (checkDate: Date, excludeEventId?: string) => {
     const dateStr = checkDate.toLocaleDateString('en-CA');
-    
-    // We get the raw events to count them ourselves so we can exclude the one being edited
     const { data: dayEvents } = await supabase
         .from('events')
         .select('id')
         .eq('date', dateStr);
     
     if (dayEvents) {
-        // If we are editing, we don't count the current event towards the limit
         const count = excludeEventId 
-            ? dayEvents.filter(e => e.id !== excludeEventId).length 
+            ? dayEvents.filter(e => String(e.id) !== String(excludeEventId)).length 
             : dayEvents.length;
 
         if (count >= 3) {
-            alert("Daily Limit Reached: You can only have 3 events per day.");
+            toast.error("Daily Limit Reached: 3 events per day.");
             return false;
         }
     }
@@ -116,7 +113,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ session, onLogout }) => {
 
   // --- HELPER: CHECK TIME OVERLAP ---
   const checkOverlap = (checkDate: string, newStart: string, newEnd: string, excludeEventId?: string) => {
-    // Convert "HH:MM" to minutes for comparison
     const toMinutes = (timeStr: string) => {
         const [h, m] = timeStr.split(':').map(Number);
         return h * 60 + m;
@@ -125,30 +121,28 @@ export const Dashboard: React.FC<DashboardProps> = ({ session, onLogout }) => {
     const newStartMin = toMinutes(newStart);
     const newEndMin = toMinutes(newEnd);
 
-    // Filter events for the same day
     const dayEvents = events.filter(e => 
         e.date === checkDate && 
-        e.id !== excludeEventId // Don't compare against self if editing
+        String(e.id) !== String(excludeEventId) // FIX: String comparison
     );
 
     for (const existing of dayEvents) {
         if (!existing.startTime || !existing.endTime) continue;
-        
         const existStart = toMinutes(existing.startTime);
         const existEnd = toMinutes(existing.endTime);
 
-        // Overlap logic: (StartA < EndB) and (EndA > StartB)
         if (newStartMin < existEnd && newEndMin > existStart) {
-            return true; // Overlap detected
+            return true; 
         }
     }
     return false;
   };
 
-  // --- FORCE REFRESH (Call Backend) ---
+  // --- FORCE REFRESH ---
   const handleForceRefresh = async () => {
     if (refreshing) return;
     setRefreshing(true);
+    const toastId = toast.loading("Syncing audio...");
     
     try {
         const response = await fetch(SCHEDULER_URL, {
@@ -158,40 +152,35 @@ export const Dashboard: React.FC<DashboardProps> = ({ session, onLogout }) => {
         });
 
         if (response.ok) {
-            setMsg("System refreshed! Audio updated.");
+            toast.success("System refreshed!", { id: toastId });
         } else {
-            setError("Refresh failed. Server error.");
+            toast.error("Refresh failed.", { id: toastId });
         }
     } catch (err) {
         console.error(err);
-        setError("Network error connecting to scheduler.");
+        toast.error("Network error.", { id: toastId });
     } finally {
         setRefreshing(false);
-        setTimeout(() => { setMsg(''); setError(''); }, 4000);
     }
   };
 
   const handleManualConvert = async () => {
-    if (!text.trim()) { alert("Please enter text."); return; }
+    if (!text.trim()) { toast("Please enter text", { icon: '✍️' }); return; }
     
     const dateStr = date.toLocaleDateString('en-CA');
     const startStr = startTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false});
     const endStr = endTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false});
 
-    // 1. Check Limit
     const canAdd = await checkLimit(date);
     if (!canAdd) return;
 
-    // 2. Check Overlap
     const hasOverlap = checkOverlap(dateStr, startStr, endStr);
     if (hasOverlap) {
-        setError("Time Conflict! This event overlaps with an existing one.");
-        setTimeout(() => setError(''), 4000);
+        toast.error("Time Conflict! Overlaps existing event.");
         return;
     }
 
     setLoading(true);
-    setError('');
 
     const { data, error } = await supabase.from('events').insert([{
         title: "Manual Alert",
@@ -207,7 +196,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ session, onLogout }) => {
 
     if (data) {
         const manualEvent: CalendarEvent = {
-            id: data[0].id,
+            id: String(data[0].id),
             date: dateStr,
             title: "Manual Alert",
             message: text,
@@ -215,50 +204,43 @@ export const Dashboard: React.FC<DashboardProps> = ({ session, onLogout }) => {
             endTime: endStr
         };
         setEvents([...events, manualEvent]);
-        setMsg("Event saved! Audio queued.");
-        setText(''); // Clear text on success
-        setTimeout(() => setMsg(''), 4000);
+        toast.success("Event saved!");
+        setText(''); 
     } else if (error) {
-        setError("Failed to save event: " + error.message);
+        toast.error("Failed to save: " + error.message);
     }
   };
 
-const handleModalEvent = async (newEvent: CalendarEvent) => {
+  const handleModalEvent = async (newEvent: CalendarEvent) => {
     const eventDate = new Date(newEvent.date + 'T00:00:00'); 
     
-    // 1. Check Limit (pass ID to exclude self from count during edit)
     const canAdd = await checkLimit(eventDate, newEvent.id);
     if (!canAdd) return;
 
-    // 2. Check Overlap (pass ID to exclude self from collision check)
     const hasOverlap = checkOverlap(newEvent.date, newEvent.startTime!, newEvent.endTime!, newEvent.id);
-    
     if (hasOverlap) {
-        alert("Time Conflict: This event overlaps with an existing one.");
+        toast.error("Time Conflict: Overlaps existing event.");
         return; 
     }
 
     let result;
     
-    // 3. DETERMINE IF EDIT OR CREATE
-    // We check if the ID currently exists in our local list of events
-    const isEdit = events.some(e => e.id === newEvent.id);
+    // FIX: String comparison to correctly detect Edit mode
+    const isEdit = events.some(e => String(e.id) === String(newEvent.id));
 
     if (isEdit) {
-        // --- UPDATE LOGIC ---
         const { data, error } = await supabase.from('events')
             .update({
                 title: newEvent.title,
                 message: newEvent.message,
                 start_time: newEvent.startTime,
                 end_time: newEvent.endTime,
-                processed: false // CRITICAL: Reset processed to 'false' so audio regenerates!
+                processed: false 
             })
             .eq('id', newEvent.id)
             .select();
         result = { data, error };
     } else {
-        // --- INSERT LOGIC ---
         const { data, error } = await supabase.from('events').insert([{
             title: newEvent.title,
             message: newEvent.message,
@@ -271,36 +253,39 @@ const handleModalEvent = async (newEvent: CalendarEvent) => {
         result = { data, error };
     }
 
-    // 4. UPDATE LOCAL STATE
     if (result.data) {
         const savedData = result.data[0];
         const savedEvent = { 
             ...newEvent, 
-            id: savedData.id,
-            startTime: savedData.start_time, // This will be HH:mm:ss from DB
-            endTime: savedData.end_time      // This will be HH:mm:ss from DB
+            id: String(savedData.id), // FIX: Ensure String
+            startTime: savedData.start_time,
+            endTime: savedData.end_time
         };
         
         if (isEdit) {
-            // Replace the old event in the list with the new one
-            setEvents(events.map(e => e.id === savedEvent.id ? savedEvent : e));
-            setMsg("Event updated successfully.");
+            // FIX: String comparison to correctly replace in array
+            setEvents(events.map(e => String(e.id) === String(savedEvent.id) ? savedEvent : e));
+            toast.success("Event updated!");
         } else {
-            // Add new event to list
             setEvents([...events, savedEvent]);
-            setMsg("Event created successfully.");
+            toast.success("Event created!");
         }
-        setTimeout(() => setMsg(''), 3000);
     } else if (result.error) {
-        alert("Error saving event: " + result.error.message);
+        toast.error("Error saving: " + result.error.message);
     }
   };
 
   const handleDeleteEvent = async (eventId: string) => {
-    const updatedEvents = events.filter(e => e.id !== eventId);
+    // FIX: String comparison
+    const updatedEvents = events.filter(e => String(e.id) !== String(eventId));
     setEvents(updatedEvents);
     const { error } = await supabase.from('events').delete().eq('id', eventId);
-    if (error) console.error("Failed to delete", error);
+    if (error) {
+        toast.error("Failed to delete");
+        console.error("Failed to delete", error);
+    } else {
+        toast.success("Event deleted");
+    }
   };
 
   const handleDateSelect = (day: number, month: number, year: number) => {
@@ -311,6 +296,9 @@ const handleModalEvent = async (newEvent: CalendarEvent) => {
   return (
     <div className="min-h-screen w-full bg-gray-50 flex flex-col font-sans">
       
+      {/* TOASTER COMPONENT */}
+      <Toaster position="bottom-right" reverseOrder={false} />
+
       {/* HEADER */}
       <div className="sticky top-0 z-50 flex-none w-full flex justify-between items-center px-4 md:px-6 py-3 bg-white border-b border-gray-200 shadow-sm">
         <div>
@@ -319,7 +307,6 @@ const handleModalEvent = async (newEvent: CalendarEvent) => {
         </div>
         
         <div className="flex items-center gap-2 md:gap-3">
-            {/* REFRESH BUTTON */}
             <button 
                 onClick={handleForceRefresh}
                 disabled={refreshing}
@@ -329,7 +316,6 @@ const handleModalEvent = async (newEvent: CalendarEvent) => {
                 <RefreshIcon spinning={refreshing} />
             </button>
 
-            {/* SETTINGS BUTTON */}
             <button 
                 onClick={() => setIsSettingsOpen(true)}
                 className="p-2 rounded-full border border-gray-200 hover:bg-gray-100 text-gray-500 transition-colors"
@@ -358,7 +344,6 @@ const handleModalEvent = async (newEvent: CalendarEvent) => {
           <div className="bg-white p-4 md:p-5 rounded-2xl shadow-sm border border-gray-200">
             <div className="flex justify-between items-center mb-3">
                 <label className="font-bold block text-gray-700 text-sm uppercase tracking-wide">1. Message</label>
-                {/* NEW: Character Counter */}
                 <span className={`text-xs font-medium ${text.length > 180 ? 'text-red-600' : 'text-gray-400'}`}>
                     {text.length}/180
                 </span>
@@ -366,7 +351,7 @@ const handleModalEvent = async (newEvent: CalendarEvent) => {
             <textarea 
               placeholder="Type your alert message here..."
               value={text}
-              maxLength={180} // NEW: Max Limit Enforced
+              maxLength={180} 
               onChange={(e) => setText(e.target.value)}
               className={textAreaClass}
             />
@@ -413,9 +398,6 @@ const handleModalEvent = async (newEvent: CalendarEvent) => {
           >
             {loading ? 'Processing...' : 'Schedule Alert'}
           </button>
-          
-          {error && <div className="p-3 bg-red-50 text-red-600 rounded-lg text-center border border-red-100 text-xs font-medium">{error}</div>}
-          {msg && <div className="p-3 bg-green-50 text-green-700 rounded-lg text-center border border-green-100 text-xs font-medium">{msg}</div>}
         </div>
 
         {/* CALENDAR AREA */}
@@ -432,7 +414,7 @@ const handleModalEvent = async (newEvent: CalendarEvent) => {
                 <ContinuousCalendar 
                     onClick={handleDateSelect} 
                     events={events}             
-                    onAddEvent={handleModalEvent} // Now handles both Add and Edit
+                    onAddEvent={handleModalEvent} 
                     onDeleteEvent={handleDeleteEvent}
                     selectedDate={date}         
                 />
