@@ -91,18 +91,58 @@ export const Dashboard: React.FC<DashboardProps> = ({ session, onLogout }) => {
   }, [session]);
 
   // --- HELPER: CHECK EVENT LIMIT ---
-  const checkLimit = async (checkDate: Date) => {
+  const checkLimit = async (checkDate: Date, excludeEventId?: string) => {
     const dateStr = checkDate.toLocaleDateString('en-CA');
-    const { count } = await supabase
+    
+    // We get the raw events to count them ourselves so we can exclude the one being edited
+    const { data: dayEvents } = await supabase
         .from('events')
-        .select('*', { count: 'exact', head: true })
+        .select('id')
         .eq('date', dateStr);
     
-    if (count !== null && count >= 3) {
-        alert("Daily Limit Reached: You can only have 3 events per day.");
-        return false;
+    if (dayEvents) {
+        // If we are editing, we don't count the current event towards the limit
+        const count = excludeEventId 
+            ? dayEvents.filter(e => e.id !== excludeEventId).length 
+            : dayEvents.length;
+
+        if (count >= 3) {
+            alert("Daily Limit Reached: You can only have 3 events per day.");
+            return false;
+        }
     }
     return true;
+  };
+
+  // --- HELPER: CHECK TIME OVERLAP ---
+  const checkOverlap = (checkDate: string, newStart: string, newEnd: string, excludeEventId?: string) => {
+    // Convert "HH:MM" to minutes for comparison
+    const toMinutes = (timeStr: string) => {
+        const [h, m] = timeStr.split(':').map(Number);
+        return h * 60 + m;
+    };
+
+    const newStartMin = toMinutes(newStart);
+    const newEndMin = toMinutes(newEnd);
+
+    // Filter events for the same day
+    const dayEvents = events.filter(e => 
+        e.date === checkDate && 
+        e.id !== excludeEventId // Don't compare against self if editing
+    );
+
+    for (const existing of dayEvents) {
+        if (!existing.startTime || !existing.endTime) continue;
+        
+        const existStart = toMinutes(existing.startTime);
+        const existEnd = toMinutes(existing.endTime);
+
+        // Overlap logic: (StartA < EndB) and (EndA > StartB)
+        if (newStartMin < existEnd && newEndMin > existStart) {
+            return true; // Overlap detected
+        }
+    }
+    return false;
   };
 
   // --- FORCE REFRESH (Call Backend) ---
@@ -133,8 +173,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ session, onLogout }) => {
 
   const handleManualConvert = async () => {
     if (!text.trim()) { alert("Please enter text."); return; }
+    
+    const dateStr = date.toLocaleDateString('en-CA');
+    const startStr = startTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false});
+    const endStr = endTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false});
+
+    // 1. Check Limit
     const canAdd = await checkLimit(date);
     if (!canAdd) return;
+
+    // 2. Check Overlap
+    const hasOverlap = checkOverlap(dateStr, startStr, endStr);
+    if (hasOverlap) {
+        setError("Time Conflict! This event overlaps with an existing one.");
+        setTimeout(() => setError(''), 4000);
+        return;
+    }
 
     setLoading(true);
     setError('');
@@ -142,9 +196,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ session, onLogout }) => {
     const { data, error } = await supabase.from('events').insert([{
         title: "Manual Alert",
         message: text,
-        date: date.toLocaleDateString('en-CA'),
-        start_time: startTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-        end_time: endTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+        date: dateStr,
+        start_time: startStr,
+        end_time: endStr,
         processed: false,
         user_id: session.user.id
     }]).select();
@@ -154,14 +208,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ session, onLogout }) => {
     if (data) {
         const manualEvent: CalendarEvent = {
             id: data[0].id,
-            date: date.toLocaleDateString('en-CA'),
+            date: dateStr,
             title: "Manual Alert",
             message: text,
-            startTime: startTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-            endTime: endTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+            startTime: startStr,
+            endTime: endStr
         };
         setEvents([...events, manualEvent]);
         setMsg("Event saved! Audio queued.");
+        setText(''); // Clear text on success
         setTimeout(() => setMsg(''), 4000);
     } else if (error) {
         setError("Failed to save event: " + error.message);
@@ -170,24 +225,74 @@ export const Dashboard: React.FC<DashboardProps> = ({ session, onLogout }) => {
 
   const handleModalEvent = async (newEvent: CalendarEvent) => {
     const eventDate = new Date(newEvent.date + 'T00:00:00'); 
-    const canAdd = await checkLimit(eventDate);
+    
+    // 1. Check Limit (pass ID if editing to exclude self)
+    const canAdd = await checkLimit(eventDate, newEvent.id);
     if (!canAdd) return;
 
-    const { data, error } = await supabase.from('events').insert([{
-        title: newEvent.title,
-        message: newEvent.message,
-        date: newEvent.date,
-        start_time: newEvent.startTime,
-        end_time: newEvent.endTime,
-        processed: false,
-        user_id: session.user.id
-    }]).select();
+    // 2. Check Overlap (pass ID if editing)
+    // Note: newEvent.startTime is already formatted by the modal usually, assume HH:mm
+    // If not, ensure formatting inside ContinuousCalendar before passing up
+    const hasOverlap = checkOverlap(newEvent.date, newEvent.startTime!, newEvent.endTime!, newEvent.id);
+    
+    if (hasOverlap) {
+        // We use alert here because this is called from the modal context
+        alert("Time Conflict: This event overlaps with an existing one.");
+        return; // Stop save
+    }
 
-    if (data) {
-        const savedEvent = { ...newEvent, id: data[0].id };
-        setEvents([...events, savedEvent]);
-    } else if (error) {
-        alert("Error saving event: " + error.message);
+    let result;
+    
+    // IF ID exists and is not temp timestamp, it's an UPDATE
+    // (We use a simple check: if the ID provided exists in our list, it's an edit)
+    const isEdit = events.some(e => e.id === newEvent.id);
+
+    if (isEdit) {
+        // UPDATE
+        const { data, error } = await supabase.from('events')
+            .update({
+                title: newEvent.title,
+                message: newEvent.message,
+                start_time: newEvent.startTime,
+                end_time: newEvent.endTime,
+                processed: false // Reset processed so audio regenerates!
+            })
+            .eq('id', newEvent.id)
+            .select();
+        result = { data, error };
+    } else {
+        // INSERT
+        const { data, error } = await supabase.from('events').insert([{
+            title: newEvent.title,
+            message: newEvent.message,
+            date: newEvent.date,
+            start_time: newEvent.startTime,
+            end_time: newEvent.endTime,
+            processed: false,
+            user_id: session.user.id
+        }]).select();
+        result = { data, error };
+    }
+
+    if (result.data) {
+        const savedData = result.data[0];
+        const savedEvent = { 
+            ...newEvent, 
+            id: savedData.id,
+            startTime: savedData.start_time, // Ensure we use DB returned format
+            endTime: savedData.end_time
+        };
+        
+        if (isEdit) {
+            setEvents(events.map(e => e.id === savedEvent.id ? savedEvent : e));
+            setMsg("Event updated successfully.");
+        } else {
+            setEvents([...events, savedEvent]);
+            setMsg("Event created successfully.");
+        }
+        setTimeout(() => setMsg(''), 3000);
+    } else if (result.error) {
+        alert("Error saving event: " + result.error.message);
     }
   };
 
@@ -251,10 +356,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ session, onLogout }) => {
         <div className="w-full lg:w-[320px] xl:w-[360px] flex-shrink-0 flex flex-col gap-4">
           
           <div className="bg-white p-4 md:p-5 rounded-2xl shadow-sm border border-gray-200">
-            <label className="font-bold mb-3 block text-gray-700 text-sm uppercase tracking-wide">1. Message</label>
+            <div className="flex justify-between items-center mb-3">
+                <label className="font-bold block text-gray-700 text-sm uppercase tracking-wide">1. Message</label>
+                {/* NEW: Character Counter */}
+                <span className={`text-xs font-medium ${text.length > 180 ? 'text-red-600' : 'text-gray-400'}`}>
+                    {text.length}/180
+                </span>
+            </div>
             <textarea 
               placeholder="Type your alert message here..."
               value={text}
+              maxLength={180} // NEW: Max Limit Enforced
               onChange={(e) => setText(e.target.value)}
               className={textAreaClass}
             />
@@ -272,7 +384,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ session, onLogout }) => {
                     showTimeSelectOnly
                     timeIntervals={15}
                     timeCaption="Time"
-                    dateFormat="h:mm aa"
+                    dateFormat="HH:mm"
+                    timeFormat="HH:mm"
                     className={datePickerClass}
                   />
                 </div>
@@ -285,7 +398,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ session, onLogout }) => {
                     showTimeSelectOnly
                     timeIntervals={15}
                     timeCaption="Time"
-                    dateFormat="h:mm aa"
+                    dateFormat="HH:mm"
+                    timeFormat="HH:mm"
                     className={datePickerClass}
                   />
                 </div>
@@ -318,7 +432,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ session, onLogout }) => {
                 <ContinuousCalendar 
                     onClick={handleDateSelect} 
                     events={events}             
-                    onAddEvent={handleModalEvent}
+                    onAddEvent={handleModalEvent} // Now handles both Add and Edit
                     onDeleteEvent={handleDeleteEvent}
                     selectedDate={date}         
                 />
