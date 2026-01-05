@@ -223,45 +223,42 @@ export const Dashboard: React.FC<DashboardProps> = ({ session, onLogout }) => {
     }
   };
 
-  const handleModalEvent = async (newEvent: CalendarEvent) => {
+const handleModalEvent = async (newEvent: CalendarEvent) => {
     const eventDate = new Date(newEvent.date + 'T00:00:00'); 
     
-    // 1. Check Limit (pass ID if editing to exclude self)
+    // 1. Check Limit (pass ID to exclude self from count during edit)
     const canAdd = await checkLimit(eventDate, newEvent.id);
     if (!canAdd) return;
 
-    // 2. Check Overlap (pass ID if editing)
-    // Note: newEvent.startTime is already formatted by the modal usually, assume HH:mm
-    // If not, ensure formatting inside ContinuousCalendar before passing up
+    // 2. Check Overlap (pass ID to exclude self from collision check)
     const hasOverlap = checkOverlap(newEvent.date, newEvent.startTime!, newEvent.endTime!, newEvent.id);
     
     if (hasOverlap) {
-        // We use alert here because this is called from the modal context
         alert("Time Conflict: This event overlaps with an existing one.");
-        return; // Stop save
+        return; 
     }
 
     let result;
     
-    // IF ID exists and is not temp timestamp, it's an UPDATE
-    // (We use a simple check: if the ID provided exists in our list, it's an edit)
+    // 3. DETERMINE IF EDIT OR CREATE
+    // We check if the ID currently exists in our local list of events
     const isEdit = events.some(e => e.id === newEvent.id);
 
     if (isEdit) {
-        // UPDATE
+        // --- UPDATE LOGIC ---
         const { data, error } = await supabase.from('events')
             .update({
                 title: newEvent.title,
                 message: newEvent.message,
                 start_time: newEvent.startTime,
                 end_time: newEvent.endTime,
-                processed: false // Reset processed so audio regenerates!
+                processed: false // CRITICAL: Reset processed to 'false' so audio regenerates!
             })
             .eq('id', newEvent.id)
             .select();
         result = { data, error };
     } else {
-        // INSERT
+        // --- INSERT LOGIC ---
         const { data, error } = await supabase.from('events').insert([{
             title: newEvent.title,
             message: newEvent.message,
@@ -274,19 +271,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ session, onLogout }) => {
         result = { data, error };
     }
 
+    // 4. UPDATE LOCAL STATE
     if (result.data) {
         const savedData = result.data[0];
         const savedEvent = { 
             ...newEvent, 
             id: savedData.id,
-            startTime: savedData.start_time, // Ensure we use DB returned format
-            endTime: savedData.end_time
+            startTime: savedData.start_time, // This will be HH:mm:ss from DB
+            endTime: savedData.end_time      // This will be HH:mm:ss from DB
         };
         
         if (isEdit) {
+            // Replace the old event in the list with the new one
             setEvents(events.map(e => e.id === savedEvent.id ? savedEvent : e));
             setMsg("Event updated successfully.");
         } else {
+            // Add new event to list
             setEvents([...events, savedEvent]);
             setMsg("Event created successfully.");
         }
