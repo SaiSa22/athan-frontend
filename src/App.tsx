@@ -1,37 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { Dashboard } from './Dashboard';
-import { Auth } from './Auth';
-import { supabase } from './supabaseClient';
-import './App.css'; 
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Admin from './pages/Admin';
+import DeviceManager from './pages/DeviceManager';
 
 function App() {
-  const [session, setSession] = useState<any>(null);
-
-  useEffect(() => {
-    // 1. Check active session on load
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-    });
-
-    // 2. Listen for changes (login, logout, auto-refresh)
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-  };
-
-  if (session) {
-    return <Dashboard session={session} onLogout={handleLogout} />;
-  }
-
-  return <Auth onLoginSuccess={(s) => setSession(s)} />;
+  return (
+    <Router>
+      <Routes>
+        <Route path="/admin" element={<Admin />} />
+        {/* Captures the 4-char suffix (e.g., /d4bc) */}
+        <Route path="/:macSuffix" element={<DeviceManager />} /> 
+      </Routes>
+    </Router>
+  );
 }
 
 export default App;
