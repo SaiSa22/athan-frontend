@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { supabase } from '../lib/supabaseClient';
+import { supabase } from '../supabaseClient';
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 
 // DO SPACES CONFIG
