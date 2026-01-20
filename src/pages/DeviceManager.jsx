@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../supabaseClient'; // Ensure correct path
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 
 // DO SPACES CONFIG
@@ -8,8 +8,8 @@ const s3Client = new S3Client({
     endpoint: "https://sfo3.digitaloceanspaces.com", 
     region: "us-east-1", 
     credentials: {
-      accessKeyId: "YOUR_DO_ACCESS_KEY", // Ideally use Env Variables
-      secretAccessKey: "YOUR_DO_SECRET_KEY"
+      accessKeyId: process.env.REACT_APP_DO_ACCESS_KEY, 
+      secretAccessKey: process.env.REACT_APP_DO_SECRET_KEY
     }
 });
 
@@ -17,18 +17,17 @@ export default function DeviceManager() {
   const { macSuffix } = useParams();
   const [device, setDevice] = useState(null);
   const [times, setTimes] = useState(['', '', '', '', '']);
+  const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone); // Default to user's browser TZ
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     async function getDevice() {
-      // Find device where generated mac_suffix matches URL
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('devices')
         .select('*')
         .eq('mac_suffix', macSuffix)
         .single();
-      
       if (data) setDevice(data);
     }
     getDevice();
@@ -38,7 +37,6 @@ export default function DeviceManager() {
     if (!file || !device) return;
     setLoading(true);
 
-    // Clean MAC for filename (remove colons)
     const cleanMac = device.mac_address.replace(/:/g, '').toUpperCase();
     const mp3Name = `${cleanMac}.mp3`;
     const jsonName = `${cleanMac}.json`;
@@ -53,13 +51,13 @@ export default function DeviceManager() {
         ContentType: "audio/mpeg"
       }));
 
-      // 2. Create & Upload JSON Schedule
-      // Filter out empty times
+      // 2. Upload JSON with Timezone
       const activeTimes = times.filter(t => t !== '');
       const scheduleData = {
         mac: device.mac_address,
         audio_url: `https://athansaut.sfo3.digitaloceanspaces.com/${mp3Name}`,
-        times: activeTimes 
+        times: activeTimes,
+        timezone: timezone // <--- NEW: Saving the Timezone
       };
 
       await s3Client.send(new PutObjectCommand({
@@ -78,18 +76,37 @@ export default function DeviceManager() {
     setLoading(false);
   };
 
-  if (!device) return <h2>Loading device or Invalid URL...</h2>;
+  if (!device) return <h2>Loading...</h2>;
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h1>Configuring: {device.name}</h1>
-      <p>MAC: {device.mac_address}</p>
+    <div className="p-4 max-w-md mx-auto">
+      <h1 className="text-xl font-bold mb-4">Configuring: {device.name}</h1>
+      
+      <div className="mb-6">
+        <label className="block font-medium mb-2">Device Timezone</label>
+        <select 
+          className="w-full p-2 border rounded"
+          value={timezone} 
+          onChange={(e) => setTimezone(e.target.value)}
+        >
+           <option value="UTC">UTC</option>
+           <option value="America/New_York">Eastern Time (US)</option>
+           <option value="America/Chicago">Central Time (US)</option>
+           <option value="America/Denver">Mountain Time (US)</option>
+           <option value="America/Los_Angeles">Pacific Time (US)</option>
+           <option value="Europe/London">London (GMT)</option>
+           <option value="Asia/Dubai">Dubai (GST)</option>
+           {/* Add more as needed */}
+        </select>
+      </div>
 
-      <h3>1. Select Alert Times (24h format HH:MM)</h3>
-      {times.map((t, i) => (
-        <div key={i} style={{marginBottom: '5px'}}>
+      <div className="mb-6">
+        <label className="block font-medium mb-2">Alert Times (24h)</label>
+        {times.map((t, i) => (
           <input 
+            key={i}
             type="time" 
+            className="block w-full mb-2 p-2 border rounded"
             value={t} 
             onChange={(e) => {
               const newTimes = [...times];
@@ -97,14 +114,19 @@ export default function DeviceManager() {
               setTimes(newTimes);
             }} 
           />
-        </div>
-      ))}
+        ))}
+      </div>
 
-      <h3>2. Select MP3 File</h3>
-      <input type="file" accept=".mp3" onChange={(e) => setFile(e.target.files[0])} />
+      <div className="mb-6">
+        <label className="block font-medium mb-2">Select Audio File (.mp3)</label>
+        <input type="file" accept=".mp3" onChange={(e) => setFile(e.target.files[0])} />
+      </div>
 
-      <br /><br />
-      <button onClick={handleUpload} disabled={loading}>
+      <button 
+        onClick={handleUpload} 
+        disabled={loading}
+        className="w-full bg-blue-600 text-white p-3 rounded hover:bg-blue-700 disabled:bg-gray-400"
+      >
         {loading ? 'Uploading...' : 'Save & Sync Device'}
       </button>
     </div>
