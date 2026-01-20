@@ -8,7 +8,8 @@ html, body, #root {
   width: 100%;
   margin: 0;
   padding: 0;
-  background-color: #f9fafb;
+  background-color: #f9fafb; /* bg-gray-50 */
+  @apply text-gray-900 antialiased; /* Sharp text */
 }
 
 /* Optional: Scrollbar styling to make the calendar look nicer */
