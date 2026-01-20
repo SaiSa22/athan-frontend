@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import toast from 'react-hot-toast';
-import { Clock, Upload, Settings, Music, Globe } from 'lucide-react';
+import { Clock, Upload, Settings, Music, Globe, ChevronDown } from 'lucide-react';
 
 // DO SPACES CONFIG
 const s3Client = new S3Client({
@@ -61,7 +61,7 @@ export default function DeviceManager() {
       await s3Client.send(new PutObjectCommand({
         Bucket: "athansaut",
         Key: mp3Name,
-        Body: fileBuffer, // Sending buffer instead of stream
+        Body: fileBuffer, 
         ACL: "public-read",
         ContentType: "audio/mpeg"
       }));
@@ -134,8 +134,9 @@ export default function DeviceManager() {
               <option value="Asia/Karachi">Karachi (PKT)</option>
               <option value="Asia/Riyadh">Riyadh (AST)</option>
             </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-              <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+            {/* Replaced raw SVG with Lucide Icon */}
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+              <ChevronDown className="w-4 h-4" />
             </div>
           </div>
         </div>
