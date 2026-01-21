@@ -5,11 +5,9 @@ import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import toast from 'react-hot-toast';
 import { Clock, Upload, Settings, Music, Globe, ChevronDown } from 'lucide-react';
 
-// DEBUG: Check if keys exist (Do not keep this in production!)
+// DEBUG: Check if keys exist (Check your browser console to see "Loaded")
 console.log("Access Key:", process.env.REACT_APP_DO_ACCESS_KEY ? "Loaded" : "MISSING");
 console.log("Secret Key:", process.env.REACT_APP_DO_SECRET_KEY ? "Loaded" : "MISSING");
-
-const s3Client = new S3Client({ ...
 
 // DO SPACES CONFIG
 const s3Client = new S3Client({
@@ -140,7 +138,7 @@ export default function DeviceManager() {
               <option value="Asia/Karachi">Karachi (PKT)</option>
               <option value="Asia/Riyadh">Riyadh (AST)</option>
             </select>
-            {/* Replaced raw SVG with Lucide Icon */}
+            {/* Lucide Icon */}
             <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
               <ChevronDown className="w-4 h-4" />
             </div>
