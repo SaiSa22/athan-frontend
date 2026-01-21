@@ -5,6 +5,12 @@ import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import toast from 'react-hot-toast';
 import { Clock, Upload, Settings, Music, Globe, ChevronDown } from 'lucide-react';
 
+// DEBUG: Check if keys exist (Do not keep this in production!)
+console.log("Access Key:", process.env.REACT_APP_DO_ACCESS_KEY ? "Loaded" : "MISSING");
+console.log("Secret Key:", process.env.REACT_APP_DO_SECRET_KEY ? "Loaded" : "MISSING");
+
+const s3Client = new S3Client({ ...
+
 // DO SPACES CONFIG
 const s3Client = new S3Client({
     endpoint: "https://sfo3.digitaloceanspaces.com", 
