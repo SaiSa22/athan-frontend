@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import toast from 'react-hot-toast';
-import { Clock, Upload, Settings, Music, Globe, ChevronDown } from 'lucide-react';
+import { Clock, Upload, Settings, Music, Globe, ChevronDown, MapPin } from 'lucide-react';
 
 // DEBUG: Check if keys exist (Check your browser console to see "Loaded")
 console.log("Access Key:", process.env.REACT_APP_DO_ACCESS_KEY ? "Loaded" : "MISSING");
@@ -26,6 +26,10 @@ export default function DeviceManager() {
   const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
+  
+  // NEW: State for Location
+  const [location, setLocation] = useState(null);
+  const [locLoading, setLocLoading] = useState(false);
 
   useEffect(() => {
     async function getDevice() {
@@ -43,6 +47,30 @@ export default function DeviceManager() {
     }
     getDevice();
   }, [macSuffix]);
+
+  // NEW: Function to get Geolocation
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported by your browser");
+      return;
+    }
+
+    setLocLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude.toFixed(7);
+        const lng = position.coords.longitude.toFixed(7);
+        setLocation(`${lat}, ${lng}`);
+        toast.success("Location acquired!");
+        setLocLoading(false);
+      },
+      (error) => {
+        console.error(error);
+        toast.error("Unable to retrieve location. Check permissions.");
+        setLocLoading(false);
+      }
+    );
+  };
 
   const handleUpload = async () => {
     if (!file || !device) {
@@ -76,7 +104,8 @@ export default function DeviceManager() {
         mac: device.mac_address,
         audio_url: `https://athansaut.sfo3.digitaloceanspaces.com/${mp3Name}`,
         times: activeTimes,
-        timezone: timezone 
+        timezone: timezone,
+        location: location // Optional: Save location to JSON if needed later
       };
 
       await s3Client.send(new PutObjectCommand({
@@ -117,6 +146,30 @@ export default function DeviceManager() {
       {/* Settings Card */}
       <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6">
         
+        {/* NEW: Location Section */}
+        <div className="mb-8">
+          <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
+            <MapPin className="w-4 h-4 text-indigo-500" /> Device Location
+          </label>
+          <div className="flex flex-col gap-2">
+            <button 
+              onClick={handleGetLocation}
+              disabled={locLoading}
+              className="w-full bg-white border border-indigo-200 text-indigo-600 hover:bg-indigo-50 font-medium py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
+            >
+              {locLoading ? "Locating..." : "Get Current Location"}
+            </button>
+            
+            {/* Coordinates Display Label */}
+            {location && (
+              <div className="text-center p-2 bg-gray-50 rounded-lg border border-gray-100">
+                <span className="text-xs text-gray-400 uppercase tracking-wider font-bold block mb-1">Detected Coordinates</span>
+                <span className="text-sm font-mono text-gray-700 font-medium">{location}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Timezone Section */}
         <div className="mb-8">
           <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
