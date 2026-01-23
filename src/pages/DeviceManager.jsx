@@ -41,6 +41,20 @@ const CALCULATION_METHODS = [
   { id: 23, name: "Ministry of Awqaf, Jordan" }
 ];
 
+// NEW: List of Pre-Uploaded Audio Files
+const AUDIO_OPTIONS = [
+  { name: "Makkah", filename: "Adhan-Makkah.mp3" },
+  { name: "Madinah", filename: "Adhan-Madinah.mp3" },
+  { name: "Al-Aqsa", filename: "Adhan-Alaqsa.mp3" },
+  { name: "Egypt", filename: "Adhan-Egypt.mp3" },
+  { name: "Abdul Basit", filename: "Abdul-Basit.mp3" },
+  { name: "Minshawi", filename: "Minshawi.mp3" },
+  { name: "Yusuf Islam", filename: "Yusuf-Islam.mp3" },
+  { name: "Kazem Zadeh", filename: "Kazem-Zadeh.mp3" },
+  { name: "Aghati", filename: "Aghati.mp3" },
+  { name: "Rezaeian", filename: "Rezaeian.mp3" }
+];
+
 export default function DeviceManager() {
   const { macSuffix } = useParams();
   const [device, setDevice] = useState(null);
@@ -50,7 +64,10 @@ export default function DeviceManager() {
   const [locationStr, setLocationStr] = useState("");
   const [method, setMethod] = useState(2); 
   const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
-  const [file, setFile] = useState(null);
+  
+  // NEW: Audio Selection State
+  const [selectedAudio, setSelectedAudio] = useState(AUDIO_OPTIONS[0].filename);
+  
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -82,41 +99,30 @@ export default function DeviceManager() {
     );
   };
 
-  const handleUpload = async () => {
-    if (!file && !device) return toast.error("Please select a file.");
+  const handleSaveConfig = async () => {
+    if (!device) return;
     if (!coords) return toast.error("Location is required.");
     
     setLoading(true);
-    const toastId = toast.loading('Configuring Device...');
+    const toastId = toast.loading('Saving Configuration...');
 
     const cleanMac = device.mac_address.replace(/:/g, '').toUpperCase();
-    const mp3Name = `${cleanMac}.mp3`;
     const jsonName = `${cleanMac}.json`;
 
     try {
-      // 1. Upload MP3 (Only if selected)
-      if (file) {
-        const fileBuffer = await file.arrayBuffer();
-        await s3Client.send(new PutObjectCommand({
-          Bucket: "athansaut",
-          Key: mp3Name,
-          Body: fileBuffer, 
-          ACL: "public-read",
-          ContentType: "audio/mpeg"
-        }));
-      }
-
-      // 2. Upload CONFIG (Not specific times, but the Logic)
+      // Create Config Object
       const configData = {
-        mode: "API", // Tells ESP32 to fetch its own times
+        mode: "API", 
         mac: device.mac_address,
-        audio_url: `https://athansaut.sfo3.digitaloceanspaces.com/${mp3Name}`,
+        // NEW: Use the selected file URL
+        audio_url: `https://athansaut.sfo3.digitaloceanspaces.com/${selectedAudio}`,
         latitude: coords.lat,
         longitude: coords.lng,
         method: method,
         timezone: timezone
       };
 
+      // Upload JSON only (No MP3 upload needed anymore!)
       await s3Client.send(new PutObjectCommand({
         Bucket: "athansaut",
         Key: jsonName,
@@ -125,10 +131,10 @@ export default function DeviceManager() {
         ContentType: "application/json"
       }));
 
-      toast.success('Device Configured! It will now auto-sync daily.', { id: toastId });
+      toast.success('Saved! Device will update shortly.', { id: toastId });
     } catch (err) {
       console.error(err);
-      toast.error('Upload Failed: ' + err.message, { id: toastId });
+      toast.error('Save Failed: ' + err.message, { id: toastId });
     }
     setLoading(false);
   };
@@ -177,7 +183,7 @@ export default function DeviceManager() {
         </div>
 
         {/* 3. Timezone */}
-        <div className="mb-8">
+        <div className="mb-6">
           <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
             <Globe className="w-4 h-4 text-indigo-500" /> 3. Device Timezone
           </label>
@@ -194,29 +200,38 @@ export default function DeviceManager() {
               <option value="America/Los_Angeles">Pacific Time</option>
               <option value="Europe/London">London</option>
               <option value="Asia/Dubai">Dubai</option>
+              <option value="Asia/Karachi">Karachi</option>
+              <option value="Asia/Riyadh">Riyadh</option>
             </select>
             <ChevronDown className="absolute right-3 top-3.5 w-4 h-4 text-gray-500 pointer-events-none" />
           </div>
         </div>
 
-        {/* 4. Audio */}
+        {/* 4. Audio Selection (NEW) */}
         <div className="mb-8">
           <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
-            <Music className="w-4 h-4 text-indigo-500" /> 4. Audio File (Optional)
+            <Music className="w-4 h-4 text-indigo-500" /> 4. Adhan Sound
           </label>
-          <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100">
-            <Upload className="w-8 h-8 text-gray-400 mb-2" />
-            <span className="text-sm text-gray-500">{file ? file.name : "Tap to upload MP3"}</span>
-            <input type="file" className="hidden" accept=".mp3" onChange={(e) => setFile(e.target.files[0])} />
-          </label>
+          <div className="relative">
+            <select 
+              className="w-full bg-gray-50 border border-gray-200 text-gray-700 py-3 px-4 rounded-xl appearance-none"
+              value={selectedAudio} 
+              onChange={(e) => setSelectedAudio(e.target.value)}
+            >
+              {AUDIO_OPTIONS.map((opt) => (
+                <option key={opt.filename} value={opt.filename}>{opt.name}</option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-3 top-3.5 w-4 h-4 text-gray-500 pointer-events-none" />
+          </div>
         </div>
 
         <button 
-          onClick={handleUpload} 
+          onClick={handleSaveConfig} 
           disabled={loading}
           className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-200 transition-all"
         >
-          {loading ? 'Configuring...' : 'Save Configuration'}
+          {loading ? 'Saving...' : 'Save Configuration'}
         </button>
       </div>
     </div>
