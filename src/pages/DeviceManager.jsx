@@ -43,6 +43,7 @@ const CALCULATION_METHODS = [
 
 // NEW: List of Pre-Uploaded Audio Files
 const AUDIO_OPTIONS = [
+  { name: "Al Jazairi", filename: "Rabeh-Ibn-Darah-Jazairi.mp3" },
   { name: "Makkah", filename: "Adhan-Makkah.mp3" },
   { name: "Madinah", filename: "Adhan-Madinah.mp3" },
   { name: "Al-Aqsa", filename: "Adhan-Alaqsa.mp3" },
