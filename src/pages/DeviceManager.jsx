@@ -43,6 +43,7 @@ const CALCULATION_METHODS = [
 
 // NEW: List of Pre-Uploaded Audio Files
 const AUDIO_OPTIONS = [
+  { name: "Kassim Zadeh", filename: "adhan_zadeh.mp3" },
   { name: "Mansoor-Zahrani", filename: "Mansoor-Zahrani.mp3" },
   { name: "Al Jazairi", filename: "Rabeh-Ibn-Darah-Jazairi.mp3" },
   { name: "Makkah", filename: "Adhan-Makkah.mp3" },
