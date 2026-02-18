@@ -3,16 +3,16 @@ import { useParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import toast from 'react-hot-toast';
-import { Upload, Settings, Music, Globe, ChevronDown, MapPin, Calculator } from 'lucide-react';
+import { Music, Globe, ChevronDown, MapPin, Calculator, Save, Wifi } from 'lucide-react';
 
 // DO SPACES CONFIG
 const s3Client = new S3Client({
-    endpoint: "https://sfo3.digitaloceanspaces.com", 
-    region: "us-east-1", 
-    credentials: {
-      accessKeyId: process.env.REACT_APP_DO_ACCESS_KEY, 
-      secretAccessKey: process.env.REACT_APP_DO_SECRET_KEY
-    }
+  endpoint: "https://sfo3.digitaloceanspaces.com", 
+  region: "us-east-1", 
+  credentials: {
+    accessKeyId: process.env.REACT_APP_DO_ACCESS_KEY, 
+    secretAccessKey: process.env.REACT_APP_DO_SECRET_KEY
+  }
 });
 
 const CALCULATION_METHODS = [
@@ -41,7 +41,6 @@ const CALCULATION_METHODS = [
   { id: 23, name: "Ministry of Awqaf, Jordan" }
 ];
 
-// NEW: List of Pre-Uploaded Audio Files
 const AUDIO_OPTIONS = [
   { name: "Kassim Zadeh", filename: "adhan_zadeh.mp3" },
   { name: "Mansoor-Zahrani", filename: "Mansoor-Zahrani.mp3" },
@@ -58,20 +57,34 @@ const AUDIO_OPTIONS = [
   { name: "Rezaeian", filename: "Rezaeian.mp3" }
 ];
 
+const TIMEZONES = [
+  { value: "UTC", label: "UTC" },
+  { value: "America/New_York", label: "Eastern Time (ET)" },
+  { value: "America/Chicago", label: "Central Time (CT)" },
+  { value: "America/Denver", label: "Mountain Time (MT)" },
+  { value: "America/Los_Angeles", label: "Pacific Time (PT)" },
+  { value: "Europe/London", label: "London (GMT)" },
+  { value: "Europe/Paris", label: "Paris (CET)" },
+  { value: "Asia/Dubai", label: "Dubai (GST)" },
+  { value: "Asia/Karachi", label: "Karachi (PKT)" },
+  { value: "Asia/Riyadh", label: "Riyadh (AST)" },
+  { value: "Asia/Kolkata", label: "India (IST)" },
+  { value: "Asia/Jakarta", label: "Jakarta (WIB)" },
+  { value: "Asia/Kuala_Lumpur", label: "Malaysia (MYT)" },
+  { value: "Africa/Cairo", label: "Cairo (EET)" }
+];
+
 export default function DeviceManager() {
   const { macSuffix } = useParams();
   const [device, setDevice] = useState(null);
   
-  // Settings State
   const [coords, setCoords] = useState(null); 
   const [locationStr, setLocationStr] = useState("");
   const [method, setMethod] = useState(2); 
   const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
-  
-  // NEW: Audio Selection State
   const [selectedAudio, setSelectedAudio] = useState(AUDIO_OPTIONS[0].filename);
-  
   const [loading, setLoading] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     async function getDevice() {
@@ -89,35 +102,33 @@ export default function DeviceManager() {
 
   const handleGetLocation = () => {
     if (!navigator.geolocation) return toast.error("Geolocation not supported");
-    toast.loading("Locating...", { id: "loc" });
+    toast.loading("Detecting location...", { id: "loc" });
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const lat = pos.coords.latitude.toFixed(5);
         const lng = pos.coords.longitude.toFixed(5);
         setCoords({ lat, lng });
         setLocationStr(`${lat}, ${lng}`);
-        toast.success("Location Found!", { id: "loc" });
+        toast.success("Location detected!", { id: "loc" });
       },
-      (err) => toast.error("Location failed.", { id: "loc" })
+      (err) => toast.error("Location detection failed.", { id: "loc" })
     );
   };
 
   const handleSaveConfig = async () => {
     if (!device) return;
-    if (!coords) return toast.error("Location is required.");
+    if (!coords) return toast.error("Please detect your location first.");
     
     setLoading(true);
-    const toastId = toast.loading('Saving Configuration...');
+    const toastId = toast.loading('Saving configuration...');
 
     const cleanMac = device.mac_address.replace(/:/g, '').toUpperCase();
     const jsonName = `${cleanMac}.json`;
 
     try {
-      // Create Config Object
       const configData = {
         mode: "API", 
         mac: device.mac_address,
-        // NEW: Use the selected file URL
         audio_url: `https://athansaut.sfo3.digitaloceanspaces.com/${selectedAudio}`,
         latitude: coords.lat,
         longitude: coords.lng,
@@ -125,7 +136,6 @@ export default function DeviceManager() {
         timezone: timezone
       };
 
-      // Upload JSON only (No MP3 upload needed anymore!)
       await s3Client.send(new PutObjectCommand({
         Bucket: "athansaut",
         Key: jsonName,
@@ -134,108 +144,199 @@ export default function DeviceManager() {
         ContentType: "application/json"
       }));
 
-      toast.success('Saved! Device will update shortly.', { id: toastId });
+      toast.success('Configuration saved!', { id: toastId });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
     } catch (err) {
       console.error(err);
-      toast.error('Save Failed: ' + err.message, { id: toastId });
+      toast.error('Save failed: ' + err.message, { id: toastId });
     }
     setLoading(false);
   };
 
-  if (!device) return <div className="text-center p-10">Loading...</div>;
+  if (!device) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-400">Loading device...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6 pb-12">
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-        <h2 className="text-lg font-bold text-gray-800">{device.name}</h2>
-        <p className="text-sm text-gray-500 font-mono">MAC: {device.mac_address}</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 text-white pb-8">
+      {/* Decorative Background */}
+      <div className="fixed inset-0 opacity-[0.03] pointer-events-none">
+        <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
+          <defs>
+            <pattern id="islamic-device" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+              <path d="M10 0L20 10L10 20L0 10Z" fill="none" stroke="white" strokeWidth="0.5"/>
+              <circle cx="10" cy="10" r="4" fill="none" stroke="white" strokeWidth="0.3"/>
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#islamic-device)"/>
+        </svg>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6">
+      {/* Ambient Glow */}
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none" />
+
+      <div className="relative z-10 max-w-lg mx-auto px-4 pt-8">
         
-        {/* 1. Location */}
-        <div className="mb-6">
-          <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
-            <MapPin className="w-4 h-4 text-indigo-500" /> 1. Device Location
-          </label>
+        {/* Device Header */}
+        <div className="bg-white/[0.08] backdrop-blur-2xl rounded-[24px] p-5 mb-5 border border-white/[0.08] shadow-xl">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+              <Wifi className="w-7 h-7 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-white">{device.name}</h2>
+              <p className="text-sm text-slate-400 font-mono">{device.mac_address}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Configuration Card */}
+        <div className="bg-white/[0.08] backdrop-blur-2xl rounded-[28px] p-6 border border-white/[0.08] shadow-2xl space-y-6">
+          
+          {/* 1. Location */}
+          <div>
+            <label className="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-3">
+              <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                <MapPin className="w-4 h-4 text-blue-400" />
+              </div>
+              <span>1. Device Location</span>
+            </label>
+            <button 
+              onClick={handleGetLocation}
+              className={`w-full py-4 rounded-xl font-medium transition-all flex items-center justify-center gap-2 ${
+                coords 
+                  ? 'bg-emerald-500/20 border-2 border-emerald-500/30 text-emerald-400' 
+                  : 'bg-slate-800/50 border-2 border-slate-700/50 text-slate-300 hover:border-blue-500/50 hover:text-blue-400'
+              }`}
+            >
+              {coords ? (
+                <>
+                  <MapPin className="w-5 h-5" />
+                  {coords.lat}, {coords.lng}
+                </>
+              ) : (
+                <>
+                  <MapPin className="w-5 h-5" />
+                  Tap to Detect Location
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* 2. Calculation Method */}
+          <div>
+            <label className="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-3">
+              <div className="w-8 h-8 rounded-lg bg-violet-500/20 flex items-center justify-center">
+                <Calculator className="w-4 h-4 text-violet-400" />
+              </div>
+              <span>2. Calculation Method</span>
+            </label>
+            <div className="relative">
+              <select 
+                className="w-full bg-slate-900/50 border-2 border-slate-700/50 text-white py-3.5 px-4 rounded-xl appearance-none focus:outline-none focus:border-violet-500/50 transition-all cursor-pointer"
+                value={method} 
+                onChange={(e) => setMethod(Number(e.target.value))}
+              >
+                {CALCULATION_METHODS.map(m => (
+                  <option key={m.id} value={m.id} className="bg-slate-900">{m.name}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 pointer-events-none" />
+            </div>
+          </div>
+
+          {/* 3. Timezone */}
+          <div>
+            <label className="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-3">
+              <div className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center">
+                <Globe className="w-4 h-4 text-cyan-400" />
+              </div>
+              <span>3. Timezone</span>
+            </label>
+            <div className="relative">
+              <select 
+                className="w-full bg-slate-900/50 border-2 border-slate-700/50 text-white py-3.5 px-4 rounded-xl appearance-none focus:outline-none focus:border-cyan-500/50 transition-all cursor-pointer"
+                value={timezone} 
+                onChange={(e) => setTimezone(e.target.value)}
+              >
+                {TIMEZONES.map(tz => (
+                  <option key={tz.value} value={tz.value} className="bg-slate-900">{tz.label}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 pointer-events-none" />
+            </div>
+          </div>
+
+          {/* 4. Adhan Sound */}
+          <div>
+            <label className="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-3">
+              <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                <Music className="w-4 h-4 text-amber-400" />
+              </div>
+              <span>4. Adhan Sound</span>
+            </label>
+            <div className="relative">
+              <select 
+                className="w-full bg-slate-900/50 border-2 border-slate-700/50 text-white py-3.5 px-4 rounded-xl appearance-none focus:outline-none focus:border-amber-500/50 transition-all cursor-pointer"
+                value={selectedAudio} 
+                onChange={(e) => setSelectedAudio(e.target.value)}
+              >
+                {AUDIO_OPTIONS.map((opt) => (
+                  <option key={opt.filename} value={opt.filename} className="bg-slate-900">{opt.name}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 pointer-events-none" />
+            </div>
+          </div>
+
+          {/* Save Button */}
           <button 
-            onClick={handleGetLocation}
-            className="w-full bg-white border border-indigo-200 text-indigo-600 hover:bg-indigo-50 font-medium py-3 rounded-xl transition-colors"
+            onClick={handleSaveConfig} 
+            disabled={loading || !coords}
+            className={`w-full py-5 rounded-2xl font-bold text-lg transition-all transform active:scale-[0.98] shadow-2xl flex items-center justify-center gap-3 ${
+              saved
+                ? 'bg-emerald-500 text-white shadow-emerald-500/40'
+                : 'bg-gradient-to-r from-emerald-500 via-emerald-500 to-teal-500 text-white shadow-emerald-500/30 hover:shadow-emerald-500/50 disabled:from-slate-600 disabled:to-slate-700 disabled:shadow-none'
+            }`}
           >
-            {locationStr ? `Lat: ${coords.lat}, Lng: ${coords.lng}` : "Detect Location"}
+            {loading ? (
+              <>
+                <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                </svg>
+                Saving...
+              </>
+            ) : saved ? (
+              <>
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/>
+                </svg>
+                Saved Successfully!
+              </>
+            ) : (
+              <>
+                <Save className="w-5 h-5" />
+                Save Configuration
+              </>
+            )}
           </button>
         </div>
 
-        {/* 2. Method */}
-        <div className="mb-6">
-          <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
-            <Calculator className="w-4 h-4 text-indigo-500" /> 2. Calculation Method
-          </label>
-          <div className="relative">
-            <select 
-              className="w-full bg-gray-50 border border-gray-200 text-gray-700 py-3 px-4 rounded-xl appearance-none"
-              value={method} 
-              onChange={(e) => setMethod(Number(e.target.value))}
-            >
-              {CALCULATION_METHODS.map(m => (
-                <option key={m.id} value={m.id}>{m.name}</option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-3 top-3.5 w-4 h-4 text-gray-500 pointer-events-none" />
-          </div>
+        {/* Help Text */}
+        <div className="mt-6 text-center px-4">
+          <p className="text-sm text-slate-400 leading-relaxed">
+            After saving, <span className="text-emerald-400 font-semibold">press the button once</span> on your device to download the new configuration.
+          </p>
         </div>
-
-        {/* 3. Timezone */}
-        <div className="mb-6">
-          <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
-            <Globe className="w-4 h-4 text-indigo-500" /> 3. Device Timezone
-          </label>
-          <div className="relative">
-            <select 
-              className="w-full bg-gray-50 border border-gray-200 text-gray-700 py-3 px-4 rounded-xl appearance-none"
-              value={timezone} 
-              onChange={(e) => setTimezone(e.target.value)}
-            >
-              <option value="UTC">UTC</option>
-              <option value="America/New_York">Eastern Time</option>
-              <option value="America/Chicago">Central Time</option>
-              <option value="America/Denver">Mountain Time</option>
-              <option value="America/Los_Angeles">Pacific Time</option>
-              <option value="Europe/London">London</option>
-              <option value="Asia/Dubai">Dubai</option>
-              <option value="Asia/Karachi">Karachi</option>
-              <option value="Asia/Riyadh">Riyadh</option>
-            </select>
-            <ChevronDown className="absolute right-3 top-3.5 w-4 h-4 text-gray-500 pointer-events-none" />
-          </div>
-        </div>
-
-        {/* 4. Audio Selection (NEW) */}
-        <div className="mb-8">
-          <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
-            <Music className="w-4 h-4 text-indigo-500" /> 4. Adhan Sound
-          </label>
-          <div className="relative">
-            <select 
-              className="w-full bg-gray-50 border border-gray-200 text-gray-700 py-3 px-4 rounded-xl appearance-none"
-              value={selectedAudio} 
-              onChange={(e) => setSelectedAudio(e.target.value)}
-            >
-              {AUDIO_OPTIONS.map((opt) => (
-                <option key={opt.filename} value={opt.filename}>{opt.name}</option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-3 top-3.5 w-4 h-4 text-gray-500 pointer-events-none" />
-          </div>
-        </div>
-
-        <button 
-          onClick={handleSaveConfig} 
-          disabled={loading}
-          className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-200 transition-all"
-        >
-          {loading ? 'Saving...' : 'Save Configuration'}
-        </button>
       </div>
     </div>
   );
