@@ -182,14 +182,14 @@ export default function DeviceManager() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 flex items-center justify-center p-4 relative">
-        <div className="relative z-10 text-center bg-white/[0.08] backdrop-blur-2xl rounded-[24px] p-8 border border-white/[0.08]">
-          <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="text-center bg-white rounded-[24px] p-8 border border-slate-200 shadow-xl max-w-sm w-full">
+          <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
             <span className="text-3xl">❌</span>
           </div>
-          <h2 className="text-xl font-bold text-white mb-2">Device Not Found</h2>
-          <p className="text-slate-400 mb-4">{error}</p>
-          <p className="text-slate-500 text-sm">Check the URL or add the device first.</p>
+          <h2 className="text-xl font-bold text-slate-900 mb-2">Device Not Found</h2>
+          <p className="text-slate-500 mb-4">{error}</p>
+          <p className="text-slate-400 text-sm">Check the URL or add the device first.</p>
         </div>
       </div>
     );
@@ -197,58 +197,47 @@ export default function DeviceManager() {
 
   if (!device) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 flex items-center justify-center relative">
-        <div className="relative z-10 text-center">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
           <div className="w-12 h-12 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-400">Loading device...</p>
-          <p className="text-slate-500 text-sm mt-2">Looking for: {macSuffix}</p>
+          <p className="text-slate-600 font-medium">Loading device...</p>
+          <p className="text-slate-400 text-sm mt-2">Looking for: {macSuffix}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 text-white pb-24 relative overflow-x-hidden">
-      {/* Decorative Background - Changed 'fixed' to 'absolute' to prevent layout pushing */}
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none z-0">
-        <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
-          <defs>
-            <pattern id="islamic-device" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
-              <path d="M10 0L20 10L10 20L0 10Z" fill="none" stroke="white" strokeWidth="0.5"/>
-              <circle cx="10" cy="10" r="4" fill="none" stroke="white" strokeWidth="0.3"/>
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#islamic-device)"/>
-        </svg>
-      </div>
-
-      {/* Ambient Glow - Changed 'fixed' to 'absolute' */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none z-0" />
+    // Lighter background, no fixed elements interfering with flow
+    <div className="min-h-screen bg-slate-50 pb-24 relative">
+      
+      {/* Subtle top glow (Optional, but looks nice on light mode) */}
+      <div className="absolute top-0 left-0 right-0 h-64 bg-gradient-to-b from-emerald-500/5 to-transparent pointer-events-none" />
 
       {/* Main Content */}
       <div className="relative z-10 max-w-lg mx-auto px-4 pt-8">
         
         {/* Device Header */}
-        <div className="bg-white/[0.08] backdrop-blur-2xl rounded-[24px] p-5 mb-5 border border-white/[0.08] shadow-xl">
+        <div className="bg-white rounded-[24px] p-5 mb-5 border border-slate-200 shadow-sm">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
               <Wifi className="w-7 h-7 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-white">{device.name}</h2>
-              <p className="text-sm text-slate-400 font-mono">{device.mac_address}</p>
+              <h2 className="text-xl font-bold text-slate-900">{device.name}</h2>
+              <p className="text-sm text-slate-500 font-mono">{device.mac_address}</p>
             </div>
           </div>
         </div>
 
         {/* Configuration Card */}
-        <div className="bg-white/[0.08] backdrop-blur-2xl rounded-[28px] p-6 border border-white/[0.08] shadow-2xl space-y-6">
+        <div className="bg-white rounded-[28px] p-6 border border-slate-200 shadow-xl space-y-6">
           
           {/* 1. Location */}
           <div>
-            <label className="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                <MapPin className="w-4 h-4 text-blue-400" />
+            <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-3">
+              <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
+                <MapPin className="w-4 h-4" />
               </div>
               <span>1. Device Location</span>
             </label>
@@ -256,8 +245,8 @@ export default function DeviceManager() {
               onClick={handleGetLocation}
               className={`w-full py-4 rounded-xl font-medium transition-all flex items-center justify-center gap-2 ${
                 coords 
-                  ? 'bg-emerald-500/20 border-2 border-emerald-500/30 text-emerald-400' 
-                  : 'bg-slate-800/50 border-2 border-slate-700/50 text-slate-300 hover:border-blue-500/50 hover:text-blue-400'
+                  ? 'bg-emerald-50 border-2 border-emerald-200 text-emerald-700' 
+                  : 'bg-slate-50 border-2 border-slate-200 text-slate-600 hover:border-blue-200 hover:text-blue-600'
               }`}
             >
               {coords ? (
@@ -276,67 +265,67 @@ export default function DeviceManager() {
 
           {/* 2. Calculation Method */}
           <div>
-            <label className="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-violet-500/20 flex items-center justify-center">
-                <Calculator className="w-4 h-4 text-violet-400" />
+            <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-3">
+              <div className="w-8 h-8 rounded-lg bg-violet-100 text-violet-600 flex items-center justify-center">
+                <Calculator className="w-4 h-4" />
               </div>
               <span>2. Calculation Method</span>
             </label>
             <div className="relative">
               <select 
-                className="w-full bg-slate-900/50 border-2 border-slate-700/50 text-white py-3.5 px-4 rounded-xl appearance-none focus:outline-none focus:border-violet-500/50 transition-all cursor-pointer"
+                className="w-full bg-slate-50 border-2 border-slate-200 text-slate-900 py-3.5 px-4 rounded-xl appearance-none focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500 transition-all cursor-pointer"
                 value={method} 
                 onChange={(e) => setMethod(Number(e.target.value))}
               >
                 {CALCULATION_METHODS.map(m => (
-                  <option key={m.id} value={m.id} className="bg-slate-900">{m.name}</option>
+                  <option key={m.id} value={m.id}>{m.name}</option>
                 ))}
               </select>
-              <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 pointer-events-none" />
+              <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
             </div>
           </div>
 
           {/* 3. Timezone */}
           <div>
-            <label className="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center">
-                <Globe className="w-4 h-4 text-cyan-400" />
+            <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-3">
+              <div className="w-8 h-8 rounded-lg bg-cyan-100 text-cyan-600 flex items-center justify-center">
+                <Globe className="w-4 h-4" />
               </div>
               <span>3. Timezone</span>
             </label>
             <div className="relative">
               <select 
-                className="w-full bg-slate-900/50 border-2 border-slate-700/50 text-white py-3.5 px-4 rounded-xl appearance-none focus:outline-none focus:border-cyan-500/50 transition-all cursor-pointer"
+                className="w-full bg-slate-50 border-2 border-slate-200 text-slate-900 py-3.5 px-4 rounded-xl appearance-none focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all cursor-pointer"
                 value={timezone} 
                 onChange={(e) => setTimezone(e.target.value)}
               >
                 {TIMEZONES.map(tz => (
-                  <option key={tz.value} value={tz.value} className="bg-slate-900">{tz.label}</option>
+                  <option key={tz.value} value={tz.value}>{tz.label}</option>
                 ))}
               </select>
-              <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 pointer-events-none" />
+              <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
             </div>
           </div>
 
           {/* 4. Adhan Sound */}
           <div>
-            <label className="flex items-center gap-2 text-sm font-semibold text-slate-300 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center">
-                <Music className="w-4 h-4 text-amber-400" />
+            <label className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-3">
+              <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center">
+                <Music className="w-4 h-4" />
               </div>
               <span>4. Adhan Sound</span>
             </label>
             <div className="relative">
               <select 
-                className="w-full bg-slate-900/50 border-2 border-slate-700/50 text-white py-3.5 px-4 rounded-xl appearance-none focus:outline-none focus:border-amber-500/50 transition-all cursor-pointer"
+                className="w-full bg-slate-50 border-2 border-slate-200 text-slate-900 py-3.5 px-4 rounded-xl appearance-none focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all cursor-pointer"
                 value={selectedAudio} 
                 onChange={(e) => setSelectedAudio(e.target.value)}
               >
                 {AUDIO_OPTIONS.map((opt) => (
-                  <option key={opt.filename} value={opt.filename} className="bg-slate-900">{opt.name}</option>
+                  <option key={opt.filename} value={opt.filename}>{opt.name}</option>
                 ))}
               </select>
-              <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 pointer-events-none" />
+              <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
             </div>
           </div>
 
@@ -344,10 +333,10 @@ export default function DeviceManager() {
           <button 
             onClick={handleSaveConfig} 
             disabled={loading || !coords}
-            className={`w-full py-5 rounded-2xl font-bold text-lg transition-all transform active:scale-[0.98] shadow-2xl flex items-center justify-center gap-3 ${
+            className={`w-full py-5 rounded-2xl font-bold text-lg transition-all transform active:scale-[0.98] shadow-lg flex items-center justify-center gap-3 ${
               saved
-                ? 'bg-emerald-500 text-white shadow-emerald-500/40'
-                : 'bg-gradient-to-r from-emerald-500 via-emerald-500 to-teal-500 text-white shadow-emerald-500/30 hover:shadow-emerald-500/50 disabled:from-slate-600 disabled:to-slate-700 disabled:shadow-none'
+                ? 'bg-emerald-500 text-white shadow-emerald-500/30'
+                : 'bg-gradient-to-r from-emerald-500 via-emerald-500 to-teal-500 text-white shadow-emerald-500/20 hover:shadow-emerald-500/40 disabled:from-slate-300 disabled:to-slate-400 disabled:shadow-none disabled:text-slate-100'
             }`}
           >
             {loading ? (
@@ -376,8 +365,8 @@ export default function DeviceManager() {
 
         {/* Help Text */}
         <div className="mt-6 text-center px-4">
-          <p className="text-sm text-slate-400 leading-relaxed">
-            After saving, <span className="text-emerald-400 font-semibold">press the button once</span> on your device to download the new configuration.
+          <p className="text-sm text-slate-500 leading-relaxed">
+            After saving, <span className="text-emerald-600 font-bold">press the button once</span> on your device to download the new configuration.
           </p>
         </div>
       </div>
