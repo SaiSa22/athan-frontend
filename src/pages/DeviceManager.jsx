@@ -209,8 +209,8 @@ export default function DeviceManager() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 text-white pb-24 relative overflow-x-hidden">
-      {/* Decorative Background - fixed with pointer-events-none */}
-      <div className="fixed inset-0 opacity-[0.03] pointer-events-none z-0">
+      {/* Decorative Background - Changed 'fixed' to 'absolute' to prevent layout pushing */}
+      <div className="absolute inset-0 opacity-[0.03] pointer-events-none z-0">
         <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
           <defs>
             <pattern id="islamic-device" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
@@ -222,8 +222,8 @@ export default function DeviceManager() {
         </svg>
       </div>
 
-      {/* Ambient Glow */}
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none z-0" />
+      {/* Ambient Glow - Changed 'fixed' to 'absolute' */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none z-0" />
 
       {/* Main Content */}
       <div className="relative z-10 max-w-lg mx-auto px-4 pt-8">
