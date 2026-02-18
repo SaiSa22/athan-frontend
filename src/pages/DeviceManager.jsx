@@ -77,6 +77,7 @@ const TIMEZONES = [
 export default function DeviceManager() {
   const { macSuffix } = useParams();
   const [device, setDevice] = useState(null);
+  const [error, setError] = useState(null);
   
   const [coords, setCoords] = useState(null); 
   const [locationStr, setLocationStr] = useState("");
@@ -88,16 +89,41 @@ export default function DeviceManager() {
 
   useEffect(() => {
     async function getDevice() {
-      const { data, error } = await supabase
+      console.log("Looking for device with macSuffix:", macSuffix);
+      
+      // Try mac_suffix first
+      let { data, error: err1 } = await supabase
         .from('devices')
         .select('*')
         .eq('mac_suffix', macSuffix)
         .single();
       
-      if (error || !data) toast.error("Device not found!");
-      else setDevice(data);
+      // If not found, try mac_address
+      if (err1 || !data) {
+        console.log("Not found by mac_suffix, trying mac_address...");
+        const { data: data2, error: err2 } = await supabase
+          .from('devices')
+          .select('*')
+          .ilike('mac_address', `%${macSuffix}%`)
+          .single();
+        
+        if (err2 || !data2) {
+          console.error("Device not found:", err1, err2);
+          setError(`Device not found: ${macSuffix}`);
+          toast.error("Device not found!");
+        } else {
+          console.log("Found device:", data2);
+          setDevice(data2);
+        }
+      } else {
+        console.log("Found device:", data);
+        setDevice(data);
+      }
     }
-    getDevice();
+    
+    if (macSuffix) {
+      getDevice();
+    }
   }, [macSuffix]);
 
   const handleGetLocation = () => {
@@ -154,21 +180,37 @@ export default function DeviceManager() {
     setLoading(false);
   };
 
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 flex items-center justify-center p-4 relative">
+        <div className="relative z-10 text-center bg-white/[0.08] backdrop-blur-2xl rounded-[24px] p-8 border border-white/[0.08]">
+          <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4">
+            <span className="text-3xl">❌</span>
+          </div>
+          <h2 className="text-xl font-bold text-white mb-2">Device Not Found</h2>
+          <p className="text-slate-400 mb-4">{error}</p>
+          <p className="text-slate-500 text-sm">Check the URL or add the device first.</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!device) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 flex items-center justify-center relative">
+        <div className="relative z-10 text-center">
           <div className="w-12 h-12 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-slate-400">Loading device...</p>
+          <p className="text-slate-500 text-sm mt-2">Looking for: {macSuffix}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 text-white pb-8">
-      {/* Decorative Background */}
-      <div className="fixed inset-0 opacity-[0.03] pointer-events-none">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 text-white pb-24 relative overflow-x-hidden">
+      {/* Decorative Background - fixed with pointer-events-none */}
+      <div className="fixed inset-0 opacity-[0.03] pointer-events-none z-0">
         <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
           <defs>
             <pattern id="islamic-device" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
@@ -181,8 +223,9 @@ export default function DeviceManager() {
       </div>
 
       {/* Ambient Glow */}
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none z-0" />
 
+      {/* Main Content */}
       <div className="relative z-10 max-w-lg mx-auto px-4 pt-8">
         
         {/* Device Header */}
