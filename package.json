@@ -1,41 +1,25 @@
 {
   "name": "athan-frontend",
-  "version": "0.1.0",
+  "version": "2.0.0",
   "private": true,
+  "description": "Smart Adhan Clock Configuration App",
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.500.0",
-    "@supabase/supabase-js": "^2.47.10",
-    "react-router-dom": "^6.22.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-hot-toast": "^2.4.1",
-    "react-scripts": "5.0.1",
-    "web-vitals": "^2.1.0",
-    "react-datepicker": "^7.5.0",
-    "date-fns": "^3.3.1",
-    "framer-motion": "^11.0.3",
-    "clsx": "^2.1.0",
-    "tailwind-merge": "^2.2.1",
-    "lucide-react": "^0.314.0",
-    "tailwindcss": "^3.4.1",
-    "autoprefixer": "^10.4.17",
-    "postcss": "^8.4.35",
-    "typescript": "^4.9.5",
-    "@types/node": "^16.18.0",
-    "@types/react": "^18.0.0",
-    "@types/react-dom": "^18.0.0"
+    "react-scripts": "5.0.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.32",
+    "tailwindcss": "^3.4.0"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
   },
   "browserslist": {
     "production": [
