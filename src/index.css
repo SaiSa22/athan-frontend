@@ -17,9 +17,10 @@
     -moz-osx-font-smoothing: grayscale;
   }
   
-  body {
+body {
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-    background: linear-gradient(to bottom right, #0f172a, #1e293b, #064e3b);
+    /* background: linear-gradient(to bottom right, #0f172a, #1e293b, #064e3b);  <-- DELETE THIS */
+    background-color: #f8fafc; /* Add this light color instead */
     min-height: 100vh;
     margin: 0;
   }
