@@ -13,12 +13,12 @@ function NavBar() {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-slate-900/95 backdrop-blur-2xl border-t border-slate-800" style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}>
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#e8e4d4] border-t border-[#d4cfc0] shadow-lg" style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}>
       <div className="flex justify-around max-w-md mx-auto py-2">
         <Link 
           to="/" 
           className={`flex flex-col items-center gap-1 px-6 py-2 rounded-xl transition-all ${
-            isActive('/') ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 hover:text-slate-300'
+            isActive('/') ? 'text-[#5c4d3c] bg-[#d4cfc0]' : 'text-[#8b7355] hover:text-[#5c4d3c]'
           }`}
         >
           <Home className="w-5 h-5" />
@@ -27,7 +27,7 @@ function NavBar() {
         <Link 
           to="/admin" 
           className={`flex flex-col items-center gap-1 px-6 py-2 rounded-xl transition-all ${
-            isActive('/admin') ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-500 hover:text-slate-300'
+            isActive('/admin') ? 'text-[#5c4d3c] bg-[#d4cfc0]' : 'text-[#8b7355] hover:text-[#5c4d3c]'
           }`}
         >
           <Settings className="w-5 h-5" />
@@ -37,7 +37,7 @@ function NavBar() {
           href="https://github.com/SaiSa22/athan-frontend" 
           target="_blank" 
           rel="noopener noreferrer"
-          className="flex flex-col items-center gap-1 px-6 py-2 rounded-xl text-slate-500 hover:text-slate-300 transition-all"
+          className="flex flex-col items-center gap-1 px-6 py-2 rounded-xl text-[#8b7355] hover:text-[#5c4d3c] transition-all"
         >
           <HelpCircle className="w-5 h-5" />
           <span className="text-[10px] font-bold uppercase tracking-wider">Help</span>
@@ -49,72 +49,52 @@ function NavBar() {
 
 function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 text-white">
-      {/* Decorative Background */}
-      <div className="fixed inset-0 opacity-[0.03] pointer-events-none">
-        <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
-          <defs>
-            <pattern id="islamic-home" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
-              <path d="M10 0L20 10L10 20L0 10Z" fill="none" stroke="white" strokeWidth="0.5"/>
-              <circle cx="10" cy="10" r="4" fill="none" stroke="white" strokeWidth="0.3"/>
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#islamic-home)"/>
-        </svg>
-      </div>
-
-      {/* Ambient Glow */}
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none" />
-
-      <div className="relative z-10 max-w-lg mx-auto px-4 pt-12 pb-24">
+    <div className="min-h-screen pb-24 px-4 pt-8">
+      <div className="max-w-lg mx-auto">
         {/* Header */}
         <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-24 h-24 mb-5 rounded-3xl bg-gradient-to-br from-emerald-400 via-emerald-500 to-teal-600 shadow-2xl shadow-emerald-500/40">
-            <svg className="w-12 h-12 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <div className="inline-flex items-center justify-center w-20 h-20 mb-4 rounded-2xl bg-[#5c4d3c] shadow-lg">
+            <svg className="w-10 h-10 text-[#f5f5dc]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
               <path d="M12 3C9.5 6 8 8.5 8 10.5C8 12.5 9 14 10.5 15C9 16 8 17 8 19C8 20.5 9 21 12 21C15 21 16 20.5 16 19C16 17 15 16 13.5 15C15 14 16 12.5 16 10.5C16 8.5 14.5 6 12 3Z"/>
               <path d="M4 21H20"/>
               <path d="M6 21V15C6 13.5 7 12 9 12"/>
               <path d="M18 21V15C18 13.5 17 12 15 12"/>
             </svg>
           </div>
-          <h1 className="text-4xl font-bold mb-3">
-            <span className="bg-gradient-to-r from-white via-emerald-100 to-emerald-200 bg-clip-text text-transparent">
-              Smart Adhan
-            </span>
-          </h1>
-          <p className="text-slate-400 text-lg">Prayer reminder device manager</p>
+          <h1 className="text-3xl font-bold text-[#3d3225] mb-2">Smart Adhan</h1>
+          <p className="text-[#6b5c4a]">Prayer reminder device manager</p>
         </div>
 
         {/* Info Cards */}
         <div className="space-y-4">
-          <div className="bg-white/[0.08] backdrop-blur-2xl rounded-[24px] p-6 border border-white/[0.08] shadow-xl">
-            <h3 className="text-lg font-bold text-white mb-2">🕌 Automatic Prayer Calls</h3>
-            <p className="text-slate-400 text-sm leading-relaxed">
+          <div className="bg-white rounded-2xl p-5 border border-[#e0dcc8] shadow-sm">
+            <h3 className="text-lg font-bold text-[#3d3225] mb-2">🕌 Automatic Prayer Calls</h3>
+            <p className="text-[#6b5c4a] text-sm leading-relaxed">
               Your device automatically plays the Adhan at each prayer time based on your location.
             </p>
           </div>
 
-          <div className="bg-white/[0.08] backdrop-blur-2xl rounded-[24px] p-6 border border-white/[0.08] shadow-xl">
-            <h3 className="text-lg font-bold text-white mb-2">📱 Easy Configuration</h3>
-            <p className="text-slate-400 text-sm leading-relaxed">
+          <div className="bg-white rounded-2xl p-5 border border-[#e0dcc8] shadow-sm">
+            <h3 className="text-lg font-bold text-[#3d3225] mb-2">📱 Easy Configuration</h3>
+            <p className="text-[#6b5c4a] text-sm leading-relaxed">
               Set your location, timezone, and preferred Adhan sound. Changes sync to your device instantly.
             </p>
           </div>
 
-          <div className="bg-white/[0.08] backdrop-blur-2xl rounded-[24px] p-6 border border-white/[0.08] shadow-xl">
-            <h3 className="text-lg font-bold text-white mb-3">🎛️ Button Controls</h3>
+          <div className="bg-white rounded-2xl p-5 border border-[#e0dcc8] shadow-sm">
+            <h3 className="text-lg font-bold text-[#3d3225] mb-3">🎛️ Button Controls</h3>
             <div className="space-y-2 text-sm">
               <div className="flex items-center gap-3">
-                <span className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-400 font-bold">1×</span>
-                <span className="text-slate-300">Download new configuration</span>
+                <span className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 font-bold">1×</span>
+                <span className="text-[#5c4d3c]">Download new configuration</span>
               </div>
               <div className="flex items-center gap-3">
-                <span className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center text-green-400 font-bold">2×</span>
-                <span className="text-slate-300">Play Adhan manually</span>
+                <span className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center text-green-600 font-bold">2×</span>
+                <span className="text-[#5c4d3c]">Play Adhan manually</span>
               </div>
               <div className="flex items-center gap-3">
-                <span className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center text-cyan-400 font-bold">3×</span>
-                <span className="text-slate-300">Enter WiFi setup mode</span>
+                <span className="w-8 h-8 rounded-lg bg-cyan-100 flex items-center justify-center text-cyan-600 font-bold">3×</span>
+                <span className="text-[#5c4d3c]">Enter WiFi setup mode</span>
               </div>
             </div>
           </div>
@@ -124,7 +104,7 @@ function HomePage() {
         <div className="mt-8">
           <Link 
             to="/admin"
-            className="block w-full py-5 rounded-2xl font-bold text-lg text-center bg-gradient-to-r from-emerald-500 via-emerald-500 to-teal-500 text-white shadow-2xl shadow-emerald-500/30 hover:shadow-emerald-500/50 transition-all active:scale-[0.98]"
+            className="block w-full py-4 rounded-xl font-bold text-lg text-center bg-[#5c4d3c] text-white shadow-md hover:bg-[#4a3d2f] transition-all active:scale-[0.98]"
           >
             Get Started →
           </Link>
@@ -141,14 +121,13 @@ export default function App() {
         position="top-center"
         toastOptions={{
           style: {
-            background: '#1e293b',
+            background: '#5c4d3c',
             color: '#fff',
-            border: '1px solid rgba(255,255,255,0.1)',
             borderRadius: '12px',
           },
           success: {
             iconTheme: {
-              primary: '#10b981',
+              primary: '#4ade80',
               secondary: '#fff',
             },
           },
