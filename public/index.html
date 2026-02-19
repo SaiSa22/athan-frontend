@@ -4,65 +4,48 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   
-  <!-- Primary Meta Tags -->
-  <title>Smart Adhan Clock - Configure Your Prayer Reminder</title>
-  <meta name="title" content="Smart Adhan Clock - Configure Your Prayer Reminder" />
-  <meta name="description" content="Configure your Smart Adhan Clock device. Set location, prayer calculation method, and custom adhan audio." />
+  <title>Smart Adhan Clock</title>
+  <meta name="description" content="Configure your Smart Adhan Clock device." />
   
-  <!-- PWA Meta Tags -->
-  <meta name="theme-color" content="#0f172a" />
+  <meta name="theme-color" content="#f5f5dc" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Adhan Clock" />
   
-  <!-- Favicon -->
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-  
-  <!-- Manifest for PWA -->
   <link rel="manifest" href="/manifest.json" />
   
-  <!-- Preload Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  
-  <!-- Open Graph / Social -->
-  <meta property="og:type" content="website" />
-  <meta property="og:title" content="Smart Adhan Clock" />
-  <meta property="og:description" content="Configure your Smart Adhan Clock device for automatic prayer reminders." />
-  <meta property="og:image" content="/og-image.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   
   <style>
-    /* Critical CSS - Prevents flash of unstyled content */
     body {
       margin: 0;
-      background: linear-gradient(to bottom right, #0f172a, #1e293b, #064e3b);
+      background-color: #f5f5dc;
       min-height: 100vh;
       font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
     }
     
-    /* Loading spinner */
     .app-loader {
       position: fixed;
       inset: 0;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(to bottom right, #0f172a, #1e293b, #064e3b);
+      background-color: #f5f5dc;
       z-index: 9999;
     }
     
     .loader-content {
       text-align: center;
-      color: white;
+      color: #5c4d3c;
     }
     
     .loader-spinner {
-      width: 48px;
-      height: 48px;
-      border: 3px solid rgba(255,255,255,0.1);
-      border-top-color: #10b981;
+      width: 40px;
+      height: 40px;
+      border: 3px solid #e0dcc8;
+      border-top-color: #5c4d3c;
       border-radius: 50%;
       animation: spin 1s linear infinite;
       margin: 0 auto 16px;
@@ -74,17 +57,16 @@
     
     .loader-text {
       font-size: 14px;
-      opacity: 0.7;
+      color: #8b7355;
     }
   </style>
 </head>
 <body>
   <div id="root">
-    <!-- Loading state while React loads -->
     <div class="app-loader">
       <div class="loader-content">
         <div class="loader-spinner"></div>
-        <p class="loader-text">Loading Adhan Clock...</p>
+        <p class="loader-text">Loading...</p>
       </div>
     </div>
   </div>
