@@ -74,11 +74,11 @@ export default function DeviceManager() {
   
   // Configuration State
   const [coords, setCoords] = useState(null); 
-  const [method, setMethod] = useState(2); 
+  const [method, setMethod] = useState(0); // Default to Jafari (id: 0)
   const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
   const [selectedAudio, setSelectedAudio] = useState(AUDIO_OPTIONS[0].filename);
-  const [prayerCount, setPrayerCount] = useState(5); // NEW: 3 or 5 prayers
-  const [volume, setVolume] = useState(80); // NEW: Volume 0-100
+  const [prayerCount, setPrayerCount] = useState(5); // 3 or 5 prayers
+  const [volume, setVolume] = useState(100); // Volume: 50, 75, or 100
   
   // Prayer Times Preview State
   const [prayerTimes, setPrayerTimes] = useState(null);
@@ -328,43 +328,51 @@ export default function DeviceManager() {
             </div>
           </div>
 
-          {/* Prayer Times Display */}
+          {/* Prayer Times Display - Table Format */}
           {prayerTimes && (
             <div className="bg-[#faf9f5] rounded-xl p-4 border border-[#e0dcc8]">
               <h3 className="text-sm font-bold text-[#5c4d3c] mb-3 flex items-center gap-2">
                 <Clock className="w-4 h-4" />
                 Today's Prayer Times
               </h3>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div className="flex justify-between p-2 bg-white rounded-lg">
-                  <span className="text-[#6b5c4a]">Fajr</span>
-                  <span className="font-mono font-bold text-[#3d3225]">{prayerTimes.Fajr}</span>
-                </div>
-                <div className="flex justify-between p-2 bg-white rounded-lg">
-                  <span className="text-[#6b5c4a]">Sunrise</span>
-                  <span className="font-mono font-bold text-[#3d3225]">{prayerTimes.Sunrise}</span>
-                </div>
-                <div className="flex justify-between p-2 bg-white rounded-lg">
-                  <span className="text-[#6b5c4a]">Dhuhr</span>
-                  <span className="font-mono font-bold text-[#3d3225]">{prayerTimes.Dhuhr}</span>
-                </div>
-                <div className="flex justify-between p-2 bg-white rounded-lg">
-                  <span className="text-[#6b5c4a]">Asr</span>
-                  <span className="font-mono font-bold text-[#3d3225]">{prayerTimes.Asr}</span>
-                </div>
-                <div className="flex justify-between p-2 bg-white rounded-lg">
-                  <span className="text-[#6b5c4a]">Maghrib</span>
-                  <span className="font-mono font-bold text-[#3d3225]">{prayerTimes.Maghrib}</span>
-                </div>
-                <div className="flex justify-between p-2 bg-white rounded-lg">
-                  <span className="text-[#6b5c4a]">Isha</span>
-                  <span className="font-mono font-bold text-[#3d3225]">{prayerTimes.Isha}</span>
-                </div>
-                <div className="flex justify-between p-2 bg-white rounded-lg col-span-2">
-                  <span className="text-[#6b5c4a]">Midnight</span>
-                  <span className="font-mono font-bold text-[#3d3225]">{prayerTimes.Midnight}</span>
-                </div>
-              </div>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-[#e0dcc8]">
+                    <th className="text-left py-2 text-[#6b5c4a] font-semibold">Prayer</th>
+                    <th className="text-right py-2 text-[#6b5c4a] font-semibold">Time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b border-[#e0dcc8]/50">
+                    <td className="py-2 text-[#5c4d3c]">Fajr</td>
+                    <td className="py-2 text-right font-mono font-bold text-[#3d3225]">{prayerTimes.Fajr}</td>
+                  </tr>
+                  <tr className="border-b border-[#e0dcc8]/50">
+                    <td className="py-2 text-[#5c4d3c]">Sunrise</td>
+                    <td className="py-2 text-right font-mono font-bold text-[#3d3225]">{prayerTimes.Sunrise}</td>
+                  </tr>
+                  <tr className="border-b border-[#e0dcc8]/50">
+                    <td className="py-2 text-[#5c4d3c]">Dhuhr</td>
+                    <td className="py-2 text-right font-mono font-bold text-[#3d3225]">{prayerTimes.Dhuhr}</td>
+                  </tr>
+                  <tr className="border-b border-[#e0dcc8]/50">
+                    <td className="py-2 text-[#5c4d3c]">Asr</td>
+                    <td className="py-2 text-right font-mono font-bold text-[#3d3225]">{prayerTimes.Asr}</td>
+                  </tr>
+                  <tr className="border-b border-[#e0dcc8]/50">
+                    <td className="py-2 text-[#5c4d3c]">Maghrib</td>
+                    <td className="py-2 text-right font-mono font-bold text-[#3d3225]">{prayerTimes.Maghrib}</td>
+                  </tr>
+                  <tr className="border-b border-[#e0dcc8]/50">
+                    <td className="py-2 text-[#5c4d3c]">Isha</td>
+                    <td className="py-2 text-right font-mono font-bold text-[#3d3225]">{prayerTimes.Isha}</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 text-[#5c4d3c]">Midnight</td>
+                    <td className="py-2 text-right font-mono font-bold text-[#3d3225]">{prayerTimes.Midnight}</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           )}
 
@@ -427,7 +435,7 @@ export default function DeviceManager() {
                 onChange={(e) => setPrayerCount(Number(e.target.value))}
               >
                 <option value={5}>5 Prayers (Fajr, Dhuhr, Asr, Maghrib, Isha)</option>
-                <option value={3}>3 Prayers (Fajr, Maghrib, Isha)</option>
+                <option value={3}>3 Prayers (Fajr, Dhuhr, Maghrib)</option>
               </select>
               <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#8b7355] pointer-events-none" />
             </div>
@@ -440,23 +448,18 @@ export default function DeviceManager() {
                 <Volume2 className="w-4 h-4" />
               </div>
               <span>6. Volume</span>
-              <span className="ml-auto text-[#6b5c4a] font-mono">{volume}%</span>
             </label>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={volume}
-              onChange={(e) => setVolume(Number(e.target.value))}
-              className="w-full h-3 bg-[#e0dcc8] rounded-full appearance-none cursor-pointer accent-[#5c4d3c]"
-              style={{
-                background: `linear-gradient(to right, #5c4d3c 0%, #5c4d3c ${volume}%, #e0dcc8 ${volume}%, #e0dcc8 100%)`
-              }}
-            />
-            <div className="flex justify-between text-xs text-[#8b7355] mt-1">
-              <span>0%</span>
-              <span>50%</span>
-              <span>100%</span>
+            <div className="relative">
+              <select 
+                className="w-full bg-[#faf9f5] border-2 border-[#e0dcc8] text-[#3d3225] py-3.5 px-4 rounded-xl appearance-none focus:outline-none focus:border-[#8b7355] transition-all cursor-pointer"
+                value={volume} 
+                onChange={(e) => setVolume(Number(e.target.value))}
+              >
+                <option value={100}>100%</option>
+                <option value={75}>75%</option>
+                <option value={50}>50%</option>
+              </select>
+              <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#8b7355] pointer-events-none" />
             </div>
           </div>
 
