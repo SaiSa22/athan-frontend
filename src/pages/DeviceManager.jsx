@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import toast from 'react-hot-toast';
-import { Music, Globe, ChevronDown, MapPin, Calculator, Save, Wifi } from 'lucide-react';
+import { Music, Globe, ChevronDown, MapPin, Calculator, Save, Wifi, Volume2, Clock, Eye } from 'lucide-react';
 
 // DO SPACES CONFIG
 const s3Client = new S3Client({
@@ -72,10 +72,19 @@ export default function DeviceManager() {
   const [device, setDevice] = useState(null);
   const [error, setError] = useState(null);
   
+  // Configuration State
   const [coords, setCoords] = useState(null); 
   const [method, setMethod] = useState(2); 
   const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
   const [selectedAudio, setSelectedAudio] = useState(AUDIO_OPTIONS[0].filename);
+  const [prayerCount, setPrayerCount] = useState(5); // NEW: 3 or 5 prayers
+  const [volume, setVolume] = useState(80); // NEW: Volume 0-100
+  
+  // Prayer Times Preview State
+  const [prayerTimes, setPrayerTimes] = useState(null);
+  const [loadingPrayerTimes, setLoadingPrayerTimes] = useState(false);
+  
+  // Save State
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -130,6 +139,41 @@ export default function DeviceManager() {
     );
   };
 
+  // NEW: Fetch prayer times from Aladhan API
+  const handleShowPrayerTimes = async () => {
+    if (!coords) {
+      toast.error("Please detect your location first.");
+      return;
+    }
+    
+    setLoadingPrayerTimes(true);
+    
+    try {
+      const today = new Date();
+      const dateStr = `${today.getDate().toString().padStart(2, '0')}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getFullYear()}`;
+      
+      // API call matching firmware: midnightMode=1 (Jafari)
+      const url = `https://api.aladhan.com/v1/timings/${dateStr}?latitude=${coords.lat}&longitude=${coords.lng}&method=${method}&midnightMode=1`;
+      
+      console.log("Fetching prayer times:", url);
+      
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      if (data.data && data.data.timings) {
+        setPrayerTimes(data.data.timings);
+        toast.success("Prayer times loaded!");
+      } else {
+        toast.error("Could not fetch prayer times.");
+      }
+    } catch (err) {
+      console.error("Error fetching prayer times:", err);
+      toast.error("Failed to fetch prayer times.");
+    }
+    
+    setLoadingPrayerTimes(false);
+  };
+
   const handleSaveConfig = async () => {
     if (!device) return;
     if (!coords) return toast.error("Please detect your location first.");
@@ -141,14 +185,20 @@ export default function DeviceManager() {
     const jsonName = `${cleanMac}.json`;
 
     try {
+      // JSON structure matching firmware expectations:
+      // - latitude/longitude as numbers (firmware handles both number and string)
+      // - method as number
+      // - timezone as string
+      // - audio_url as string
+      // NEW fields: prayer_count, volume (firmware will need update to read these)
       const configData = {
-        mode: "API", 
-        mac: device.mac_address,
-        audio_url: `https://athansaut.sfo3.digitaloceanspaces.com/${selectedAudio}`,
-        latitude: coords.lat,
-        longitude: coords.lng,
+        latitude: parseFloat(coords.lat),
+        longitude: parseFloat(coords.lng),
         method: method,
-        timezone: timezone
+        timezone: timezone,
+        audio_url: `https://athansaut.sfo3.digitaloceanspaces.com/${selectedAudio}`,
+        prayer_count: prayerCount,
+        volume: volume
       };
 
       await s3Client.send(new PutObjectCommand({
@@ -239,7 +289,7 @@ export default function DeviceManager() {
             </button>
           </div>
 
-          {/* 2. Calculation Method */}
+          {/* 2. Calculation Method with Show Button */}
           <div>
             <label className="flex items-center gap-2 text-sm font-bold text-[#5c4d3c] mb-3">
               <div className="w-8 h-8 rounded-lg bg-violet-100 text-violet-600 flex items-center justify-center">
@@ -247,19 +297,76 @@ export default function DeviceManager() {
               </div>
               <span>2. Calculation Method</span>
             </label>
-            <div className="relative">
-              <select 
-                className="w-full bg-[#faf9f5] border-2 border-[#e0dcc8] text-[#3d3225] py-3.5 px-4 rounded-xl appearance-none focus:outline-none focus:border-[#8b7355] transition-all cursor-pointer"
-                value={method} 
-                onChange={(e) => setMethod(Number(e.target.value))}
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <select 
+                  className="w-full bg-[#faf9f5] border-2 border-[#e0dcc8] text-[#3d3225] py-3.5 px-4 rounded-xl appearance-none focus:outline-none focus:border-[#8b7355] transition-all cursor-pointer"
+                  value={method} 
+                  onChange={(e) => setMethod(Number(e.target.value))}
+                >
+                  {CALCULATION_METHODS.map(m => (
+                    <option key={m.id} value={m.id}>{m.name}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#8b7355] pointer-events-none" />
+              </div>
+              <button
+                onClick={handleShowPrayerTimes}
+                disabled={!coords || loadingPrayerTimes}
+                className="px-4 py-3.5 bg-violet-100 text-violet-600 rounded-xl font-medium hover:bg-violet-200 disabled:bg-gray-100 disabled:text-gray-400 transition-all flex items-center gap-2"
               >
-                {CALCULATION_METHODS.map(m => (
-                  <option key={m.id} value={m.id}>{m.name}</option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#8b7355] pointer-events-none" />
+                {loadingPrayerTimes ? (
+                  <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                  </svg>
+                ) : (
+                  <Eye className="w-5 h-5" />
+                )}
+                Show
+              </button>
             </div>
           </div>
+
+          {/* Prayer Times Display */}
+          {prayerTimes && (
+            <div className="bg-[#faf9f5] rounded-xl p-4 border border-[#e0dcc8]">
+              <h3 className="text-sm font-bold text-[#5c4d3c] mb-3 flex items-center gap-2">
+                <Clock className="w-4 h-4" />
+                Today's Prayer Times
+              </h3>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="flex justify-between p-2 bg-white rounded-lg">
+                  <span className="text-[#6b5c4a]">Fajr</span>
+                  <span className="font-mono font-bold text-[#3d3225]">{prayerTimes.Fajr}</span>
+                </div>
+                <div className="flex justify-between p-2 bg-white rounded-lg">
+                  <span className="text-[#6b5c4a]">Sunrise</span>
+                  <span className="font-mono font-bold text-[#3d3225]">{prayerTimes.Sunrise}</span>
+                </div>
+                <div className="flex justify-between p-2 bg-white rounded-lg">
+                  <span className="text-[#6b5c4a]">Dhuhr</span>
+                  <span className="font-mono font-bold text-[#3d3225]">{prayerTimes.Dhuhr}</span>
+                </div>
+                <div className="flex justify-between p-2 bg-white rounded-lg">
+                  <span className="text-[#6b5c4a]">Asr</span>
+                  <span className="font-mono font-bold text-[#3d3225]">{prayerTimes.Asr}</span>
+                </div>
+                <div className="flex justify-between p-2 bg-white rounded-lg">
+                  <span className="text-[#6b5c4a]">Maghrib</span>
+                  <span className="font-mono font-bold text-[#3d3225]">{prayerTimes.Maghrib}</span>
+                </div>
+                <div className="flex justify-between p-2 bg-white rounded-lg">
+                  <span className="text-[#6b5c4a]">Isha</span>
+                  <span className="font-mono font-bold text-[#3d3225]">{prayerTimes.Isha}</span>
+                </div>
+                <div className="flex justify-between p-2 bg-white rounded-lg col-span-2">
+                  <span className="text-[#6b5c4a]">Midnight</span>
+                  <span className="font-mono font-bold text-[#3d3225]">{prayerTimes.Midnight}</span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* 3. Timezone */}
           <div>
@@ -302,6 +409,54 @@ export default function DeviceManager() {
                 ))}
               </select>
               <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#8b7355] pointer-events-none" />
+            </div>
+          </div>
+
+          {/* 5. Number of Prayers */}
+          <div>
+            <label className="flex items-center gap-2 text-sm font-bold text-[#5c4d3c] mb-3">
+              <div className="w-8 h-8 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center">
+                <Clock className="w-4 h-4" />
+              </div>
+              <span>5. Number of Prayers Played</span>
+            </label>
+            <div className="relative">
+              <select 
+                className="w-full bg-[#faf9f5] border-2 border-[#e0dcc8] text-[#3d3225] py-3.5 px-4 rounded-xl appearance-none focus:outline-none focus:border-[#8b7355] transition-all cursor-pointer"
+                value={prayerCount} 
+                onChange={(e) => setPrayerCount(Number(e.target.value))}
+              >
+                <option value={5}>5 Prayers (Fajr, Dhuhr, Asr, Maghrib, Isha)</option>
+                <option value={3}>3 Prayers (Fajr, Maghrib, Isha)</option>
+              </select>
+              <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#8b7355] pointer-events-none" />
+            </div>
+          </div>
+
+          {/* 6. Volume */}
+          <div>
+            <label className="flex items-center gap-2 text-sm font-bold text-[#5c4d3c] mb-3">
+              <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                <Volume2 className="w-4 h-4" />
+              </div>
+              <span>6. Volume</span>
+              <span className="ml-auto text-[#6b5c4a] font-mono">{volume}%</span>
+            </label>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={volume}
+              onChange={(e) => setVolume(Number(e.target.value))}
+              className="w-full h-3 bg-[#e0dcc8] rounded-full appearance-none cursor-pointer accent-[#5c4d3c]"
+              style={{
+                background: `linear-gradient(to right, #5c4d3c 0%, #5c4d3c ${volume}%, #e0dcc8 ${volume}%, #e0dcc8 100%)`
+              }}
+            />
+            <div className="flex justify-between text-xs text-[#8b7355] mt-1">
+              <span>0%</span>
+              <span>50%</span>
+              <span>100%</span>
             </div>
           </div>
 
