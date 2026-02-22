@@ -1,8 +1,11 @@
-import { HashRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 import Admin from './pages/Admin';
 import DeviceManager from './pages/DeviceManager';
-import { Home, Settings, HelpCircle } from 'lucide-react';
+import { Home, Settings, HelpCircle, Search } from 'lucide-react';
+import { supabase } from './supabaseClient';
 
 function NavBar() {
   const location = useLocation();
@@ -48,21 +51,80 @@ function NavBar() {
 }
 
 function HomePage() {
+  const navigate = useNavigate();
+  const [searchName, setSearchName] = useState('');
+  const [searching, setSearching] = useState(false);
+
+  const handleSearchDevice = async (e) => {
+    e.preventDefault();
+    if (!searchName.trim()) return;
+    
+    setSearching(true);
+    
+    // Search by device name (exact match, case insensitive)
+    const { data, error } = await supabase
+      .from('devices')
+      .select('*')
+      .ilike('name', searchName.trim())
+      .limit(1)
+      .single();
+    
+    setSearching(false);
+    
+    if (error || !data) {
+      toast.error('Device not found. Check the name and try again.');
+    } else {
+      const macSuffix = data.mac_suffix || data.mac_address.replace(/:/g, '').slice(-6).toLowerCase();
+      toast.success(`Found: ${data.name}`);
+      navigate(`/device/${macSuffix}`);
+    }
+  };
+
   return (
     <div className="min-h-screen pb-24 px-4 pt-8">
       <div className="max-w-lg mx-auto">
-        {/* Header */}
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-20 h-20 mb-4 rounded-2xl bg-[#5c4d3c] shadow-lg">
-            <svg className="w-10 h-10 text-[#f5f5dc]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <path d="M12 3C9.5 6 8 8.5 8 10.5C8 12.5 9 14 10.5 15C9 16 8 17 8 19C8 20.5 9 21 12 21C15 21 16 20.5 16 19C16 17 15 16 13.5 15C15 14 16 12.5 16 10.5C16 8.5 14.5 6 12 3Z"/>
-              <path d="M4 21H20"/>
-              <path d="M6 21V15C6 13.5 7 12 9 12"/>
-              <path d="M18 21V15C18 13.5 17 12 15 12"/>
-            </svg>
-          </div>
+        {/* Header - No Icon */}
+        <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-[#3d3225] mb-2">Smart Adhan</h1>
           <p className="text-[#6b5c4a]">Prayer reminder device manager</p>
+        </div>
+
+        {/* Search Device Card */}
+        <div className="bg-white rounded-2xl p-6 border border-[#e0dcc8] shadow-sm mb-5">
+          <h2 className="text-lg font-bold text-[#3d3225] mb-4">Find Your Device</h2>
+          <form onSubmit={handleSearchDevice} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-[#6b5c4a] mb-2 uppercase tracking-wider">
+                Device Name
+              </label>
+              <input 
+                type="text"
+                placeholder="Enter device name..." 
+                className="w-full px-4 py-3 bg-[#faf9f5] border-2 border-[#e0dcc8] rounded-xl text-[#3d3225] placeholder-[#a89a7d] focus:outline-none focus:border-[#8b7355] transition-all"
+                value={searchName} 
+                onChange={e => setSearchName(e.target.value)} 
+              />
+            </div>
+            <button 
+              type="submit" 
+              disabled={searching || !searchName.trim()}
+              className="w-full bg-[#5c4d3c] hover:bg-[#4a3d2f] disabled:bg-[#a89a7d] text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-md active:scale-[0.98]"
+            >
+              {searching ? (
+                <span className="flex items-center gap-2">
+                  <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                  </svg>
+                  Searching...
+                </span>
+              ) : (
+                <>
+                  <Search className="w-5 h-5" /> Go
+                </>
+              )}
+            </button>
+          </form>
         </div>
 
         {/* Info Cards */}
@@ -98,16 +160,6 @@ function HomePage() {
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Get Started */}
-        <div className="mt-8">
-          <Link 
-            to="/admin"
-            className="block w-full py-4 rounded-xl font-bold text-lg text-center bg-[#5c4d3c] text-white shadow-md hover:bg-[#4a3d2f] transition-all active:scale-[0.98]"
-          >
-            Get Started →
-          </Link>
         </div>
       </div>
     </div>
