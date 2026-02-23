@@ -185,18 +185,15 @@ export default function DeviceManager() {
     const jsonName = `${cleanMac}.json`;
 
     try {
-      // JSON structure matching firmware expectations:
-      // - latitude/longitude as numbers (firmware handles both number and string)
-      // - method as number
-      // - timezone as string
-      // - audio_url as string
-      // NEW fields: prayer_count, volume (firmware will need update to read these)
+      // JSON structure matching old format exactly, with new fields added
       const configData = {
-        latitude: parseFloat(coords.lat),
-        longitude: parseFloat(coords.lng),
+        mode: "API",
+        mac: device.mac_address.toLowerCase(),
+        audio_url: `https://athansaut.sfo3.digitaloceanspaces.com/${selectedAudio}`,
+        latitude: coords.lat,
+        longitude: coords.lng,
         method: method,
         timezone: timezone,
-        audio_url: `https://athansaut.sfo3.digitaloceanspaces.com/${selectedAudio}`,
         prayer_count: prayerCount,
         volume: volume
       };
@@ -249,11 +246,11 @@ export default function DeviceManager() {
   }
 
   return (
-    <div className="min-h-screen pb-24 px-4 pt-8">
-      <div className="max-w-lg mx-auto">
+    <div className="min-h-screen pb-24 px-4 pt-8 flex justify-center">
+      <div className="w-full max-w-lg bg-white border-2 border-[#d4cfc0] rounded-2xl p-6 shadow-md">
         
         {/* Device Header */}
-        <div className="bg-white rounded-2xl p-5 mb-5 border border-[#e0dcc8] shadow-sm">
+        <div className="bg-[#faf9f5] rounded-xl p-5 mb-5 border border-[#e0dcc8]">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-[#5c4d3c] flex items-center justify-center shadow-md">
               <Wifi className="w-7 h-7 text-[#f5f5dc]" />
@@ -265,8 +262,8 @@ export default function DeviceManager() {
           </div>
         </div>
 
-        {/* Configuration Card */}
-        <div className="bg-white rounded-2xl p-6 border border-[#e0dcc8] shadow-sm space-y-6">
+        {/* Configuration Section */}
+        <div className="bg-[#faf9f5] rounded-xl p-5 border border-[#e0dcc8] space-y-6">
           
           {/* 1. Location */}
           <div>
