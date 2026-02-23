@@ -81,8 +81,8 @@ function HomePage() {
   };
 
   return (
-    <div className="min-h-screen pb-24 px-4 pt-8">
-      <div className="max-w-lg mx-auto">
+    <div className="min-h-screen pb-24 px-4 pt-8 flex justify-center">
+      <div className="w-full max-w-lg bg-white border-2 border-[#d4cfc0] rounded-2xl p-6 shadow-md">
         {/* Header - No Icon */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-[#3d3225] mb-2">Smart Adhan</h1>
@@ -90,7 +90,7 @@ function HomePage() {
         </div>
 
         {/* Search Device Card */}
-        <div className="bg-white rounded-2xl p-6 border border-[#e0dcc8] shadow-sm mb-5">
+        <div className="bg-[#faf9f5] rounded-xl p-5 border border-[#e0dcc8] mb-5">
           <h2 className="text-lg font-bold text-[#3d3225] mb-4">Find Your Device</h2>
           <form onSubmit={handleSearchDevice} className="space-y-4">
             <div>
@@ -100,7 +100,7 @@ function HomePage() {
               <input 
                 type="text"
                 placeholder="Enter device name..." 
-                className="w-full px-4 py-3 bg-[#faf9f5] border-2 border-[#e0dcc8] rounded-xl text-[#3d3225] placeholder-[#a89a7d] focus:outline-none focus:border-[#8b7355] transition-all"
+                className="w-full px-4 py-3 bg-white border-2 border-[#e0dcc8] rounded-xl text-[#3d3225] placeholder-[#a89a7d] focus:outline-none focus:border-[#8b7355] transition-all"
                 value={searchName} 
                 onChange={e => setSearchName(e.target.value)} 
               />
@@ -129,21 +129,21 @@ function HomePage() {
 
         {/* Info Cards */}
         <div className="space-y-4">
-          <div className="bg-white rounded-2xl p-5 border border-[#e0dcc8] shadow-sm">
+          <div className="bg-[#faf9f5] rounded-xl p-5 border border-[#e0dcc8]">
             <h3 className="text-lg font-bold text-[#3d3225] mb-2">🕌 Automatic Prayer Calls</h3>
             <p className="text-[#6b5c4a] text-sm leading-relaxed">
               Your device automatically plays the Adhan at each prayer time based on your location.
             </p>
           </div>
 
-          <div className="bg-white rounded-2xl p-5 border border-[#e0dcc8] shadow-sm">
+          <div className="bg-[#faf9f5] rounded-xl p-5 border border-[#e0dcc8]">
             <h3 className="text-lg font-bold text-[#3d3225] mb-2">📱 Easy Configuration</h3>
             <p className="text-[#6b5c4a] text-sm leading-relaxed">
               Set your location, timezone, and preferred Adhan sound. Changes sync to your device instantly.
             </p>
           </div>
 
-          <div className="bg-white rounded-2xl p-5 border border-[#e0dcc8] shadow-sm">
+          <div className="bg-[#faf9f5] rounded-xl p-5 border border-[#e0dcc8]">
             <h3 className="text-lg font-bold text-[#3d3225] mb-3">🎛️ Button Controls</h3>
             <div className="space-y-2 text-sm">
               <div className="flex items-center gap-3">
