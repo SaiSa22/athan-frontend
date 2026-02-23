@@ -40,8 +40,8 @@ export default function Admin() {
   };
 
   return (
-    <div className="min-h-screen pb-24 px-4 pt-8">
-      <div className="max-w-md mx-auto">
+    <div className="min-h-screen pb-24 px-4 pt-8 flex justify-center">
+      <div className="w-full max-w-md bg-white border-2 border-[#d4cfc0] rounded-2xl p-6 shadow-md">
         
         {/* Header - No Icon */}
         <div className="text-center mb-8">
@@ -49,8 +49,8 @@ export default function Admin() {
           <p className="text-[#6b5c4a] text-sm mt-1">Register a new audio unit</p>
         </div>
 
-        {/* Add Device Card */}
-        <div className="bg-white rounded-2xl p-6 border border-[#e0dcc8] shadow-sm">
+        {/* Add Device Form */}
+        <div className="bg-[#faf9f5] rounded-xl p-5 border border-[#e0dcc8]">
           <form onSubmit={handleAddDevice} className="space-y-4">
             {/* Device Name */}
             <div>
@@ -60,7 +60,7 @@ export default function Admin() {
               <input 
                 type="text"
                 placeholder="e.g. LivingRoomSpeaker" 
-                className="w-full px-4 py-3 bg-[#faf9f5] border-2 border-[#e0dcc8] rounded-xl text-[#3d3225] placeholder-[#a89a7d] focus:outline-none focus:border-[#8b7355] transition-all"
+                className="w-full px-4 py-3 bg-white border-2 border-[#e0dcc8] rounded-xl text-[#3d3225] placeholder-[#a89a7d] focus:outline-none focus:border-[#8b7355] transition-all"
                 value={name} 
                 onChange={handleNameChange} 
               />
@@ -75,7 +75,7 @@ export default function Admin() {
               <input 
                 type="text"
                 placeholder="9C:13:9E:AB:D4:BC" 
-                className="w-full px-4 py-3 bg-[#faf9f5] border-2 border-[#e0dcc8] rounded-xl text-[#3d3225] placeholder-[#a89a7d] focus:outline-none focus:border-[#8b7355] font-mono text-sm transition-all"
+                className="w-full px-4 py-3 bg-white border-2 border-[#e0dcc8] rounded-xl text-[#3d3225] placeholder-[#a89a7d] focus:outline-none focus:border-[#8b7355] font-mono text-sm transition-all"
                 value={mac} 
                 onChange={e => setMac(e.target.value.toUpperCase())} 
               />
