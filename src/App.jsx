@@ -85,7 +85,7 @@ function HomePage() {
       <div className="w-full max-w-lg bg-white border-2 border-[#d4cfc0] rounded-2xl p-6 shadow-md">
         {/* Header - No Icon */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-[#3d3225] mb-2">Smart Adhan</h1>
+          <h1 className="text-3xl font-bold text-[#3d3225] mb-2">Athan.ONE</h1>
           <p className="text-[#6b5c4a]">Prayer reminder device manager</p>
         </div>
 
