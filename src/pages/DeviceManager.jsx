@@ -35,19 +35,16 @@ const CALCULATION_METHODS = [
 ];
 
 const AUDIO_OPTIONS = [
-  { name: "Kassim Zadeh", filename: "adhan_zadeh.mp3" },
-  { name: "Mansoor-Zahrani", filename: "Mansoor-Zahrani.mp3" },
-  { name: "Al Jazairi", filename: "Rabeh-Ibn-Darah-Jazairi.mp3" },
-  { name: "Makkah", filename: "Adhan-Makkah.mp3" },
-  { name: "Madinah", filename: "Adhan-Madinah.mp3" },
-  { name: "Al-Aqsa", filename: "Adhan-Alaqsa.mp3" },
-  { name: "Egypt", filename: "Adhan-Egypt.mp3" },
+  { name: "Kazem Zadeh", filename: "Kazem-Zadeh.mp3" },
+  { name: "Rezaeian", filename: "Rezaeian.mp3" },
   { name: "Abdul Basit", filename: "Abdul-Basit.mp3" },
   { name: "Minshawi", filename: "Minshawi.mp3" },
-  { name: "Yusuf Islam", filename: "Yusuf-Islam.mp3" },
-  { name: "Kazem Zadeh", filename: "Kazem-Zadeh.mp3" },
+  { name: "Al-Aqsa", filename: "Adhan-Alaqsa.mp3" },
+  { name: "Egypt", filename: "Adhan-Egypt.mp3" },
+  { name: "Madinah", filename: "Adhan-Madinah.mp3" },
+  { name: "Makkah", filename: "Adhan-Makkah.mp3" },
   { name: "Aghati", filename: "Aghati.mp3" },
-  { name: "Rezaeian", filename: "Rezaeian.mp3" }
+  { name: "Yusuf Islam", filename: "Yusuf-Islam.mp3" }
 ];
 
 const TIMEZONES = [
