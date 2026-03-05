@@ -37,6 +37,7 @@ const CALCULATION_METHODS = [
 const AUDIO_OPTIONS = [
   { name: "Kazem Zadeh", filename: "Kazem-Zadeh.mp3" },
   { name: "Rezaeian", filename: "Rezaeian.mp3" },
+   { name: "Mohammad Zadeh", filename: "Mohammad-Zadeh.mp3" },
   { name: "Abdul Basit", filename: "Abdul-Basit.mp3" },
   { name: "Minshawi", filename: "Minshawi.mp3" },
   { name: "Al-Aqsa", filename: "Adhan-Alaqsa.mp3" },
